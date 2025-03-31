@@ -19,9 +19,9 @@ editor_options:
 
 # Overview
 
-This webpage presents the `glmmTMB` package `equalto` covariance structure to fit a wide range of meta-analytical models.
+This webpage describes the `equalto` covariance structure within the `glmmTMB` package to fit a wide range of meta-analytical models.
 
-Let's load the packages needed. 
+First, let's load the packages needed.
 
 ```{r}
 # load packages
@@ -33,21 +33,22 @@ library(insight) #to get degrees of freedom
 library(microbenchmark) #for evaluating speed of functions
 ```
 
-Install the branch of `glmmTMB` with `equalto`. If you have `glmmTMB` already installed, remove this version and reload R afterwards (Ctrl+Shift+F10). Then we will build `glmmTMB` from the following branch:  [https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc](https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc)
+We will install `glmmTMB` using the following branch branch: <https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc>. 
+<!-- (If you have `glmmTMB` already installed, remove this version and reload R afterwards with this shortcut: Ctrl+Shift+F10) -->
 
 ```{r}
 #| eval: FALSE
 #| output: false
 #| warnings: false
 
-# remove glmmTMB (if installed)
-remove.packages("glmmTMB") 
+# remove glmmTMB (if installed) and reload R
+#remove.packages("glmmTMB") 
 
 # build package from branch: https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc
 remotes::install_github("coraliewilliams/glmmTMB", ref="equalto_covstruc", subdir="glmmTMB")
 ```
 
-Now load `glmmTMB` and check if `equalto` is there:
+Check if `equalto` is there:
 
 ```{r}
 # load it
@@ -58,24 +59,23 @@ library(glmmTMB)
 
 ```
 
-
+<!-- Yes? Great - let's move on to fitting some meta-analytical models.  -->
 
 # Multilevel meta-analysis
 
-We want to fit a multilevel meta-analysis model that synthesises effect sizes across studies by accounting for variability at the study level, at the observation (effect size) level, and by modelling correlated residual errors. 
+We are interested in fitting a multilevel meta-analysis model that synthesises effect sizes across studies by accounting for variability at the study level, at the observation (effect size) level, and by modelling correlated within-study residual errors.
 
 We specify the model as 
 $$
 y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
 $$
 
-where $i$ indexes studies and $j$ indexes effect sizes within study $i$. Here, $b_0$ is the overall mean effect, $u_i \sim N(0, s2\_u.I)$ represents the study-level random effect, $m_{ij} \sim N(0, s2\_m.I)$ captures the observation-level variability, and $e_{ij} \sim N(0, \text{VCV})$ are the residual errors, with $\text{VCV}$ representing a block-diagonal variance-covariance matrix that accounts for correlations among effect sizes from the same study.
+where $i$ indexes studies and $j$ indexes effect sizes within study $i$. Here, $b_0$ is the overall mean effect, $u_i \sim N(0, \sigma^2_{u}I)$ represents the among-study random effect, $m_{ij} \sim N(0, \sigma^2_{m}I)$ captures the within-study random effect (at the observation-level), and $e_{ij} \sim N(0, \text{VCV})$ are the sampling errors at the observation-level. $\text{VCV}$ represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances $\sigma^2_{e}=vi$ on the diagonal and accounts for correlations among effect sizes from the same study.
 
 
+### Simulate some data
 
-### Simulate data
-
-Now let's simulation some data following the structure of this model. 
+Now let's simulation data following the structure of the above multilevel meta-analysis.
 
 ```{r}
 # set up indices
@@ -95,16 +95,16 @@ b0 <- 0
 vi <- rbeta(k, 2, 20)
 
 # get VCV matrix assuming within-study correlation of rho=0.5 
-VCV <- matrix(0, nrow = k, ncol = k) 
+V <- matrix(0, nrow = k, ncol = k) 
 for (i in 2:k) {
   for (j in 1:i) {
     if (study[i] == study[j]) {
-      VCV[i,j] <- 0.5 * sqrt(vi[i] * vi[j]) 
+      V[i,j] <- 0.5 * sqrt(vi[i] * vi[j]) 
     }
   }
 }
-VCV[upper.tri(VCV)] <- t(VCV)[upper.tri(VCV)] # fill in upper diagonal
-diag(VCV) <- vi # fill in diagonal
+V[upper.tri(V)] <- t(V)[upper.tri(V)] # fill in upper diagonal
+diag(V) <- vi # fill in diagonal
 
 
 # random effects
@@ -113,7 +113,7 @@ sigma2.m <- 0.3
 u <- rnorm(k.studies, 0, sqrt(sigma2.u))[study]
 m <- rnorm(k, 0, sqrt(sigma2.m))
 #e <- rnorm(k, 0, sqrt(vi))[study] #without within-study correlation (diag VCV)
-e <- mvrnorm(n = 1, mu = rep(0, length(vi)), Sigma = VCV) #excluding within-study correlation
+e <- mvrnorm(n = 1, mu = rep(0, length(vi)), Sigma = V) 
 
 
 # compute y
@@ -126,36 +126,29 @@ dat <- data.frame(y = y,
                   study = study,
                   id = id,
                   es.id = es.id,
-                  obs = as.factor(id), # unique ID for propto and equalto (really important it is a factor variable)
-                  g = 1 # group ID for propto and equalto
+                  obs = as.factor(id), #unique ID for propto and equalto (really important it is a factor variable)
+                  g = 1 #group ID for propto and equalto (a constant here)
 )
 ```
 
-
 ### Run model
 
-Before we fit the glmmTMB model we need to obtain the variance covariance (VCV) matrix of the sampling errors. 
+Before we fit the glmmTMB model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of $\rho=0.5$. The correlation of effect sizes not from the same study is assumed to be zero.
 
 ```{r}
-# add code using vcalc just for demonstration
+VCV <- vcalc(vi, cluster=study, obs=obs, data=dat, rho=0.5)
 ```
 
-Now fit the glmmTMB model using equato
-*** add more info about what each part is
-
+Now we fit the glmmTMB model. We specify the study-level random effect $u_i$ as `(1|study)`, the sampling errors $e_{ij}$ are specified using the covariance structure `equalto(0 + obs|g,VCV)` allowing to specify the known/calculated VCV matrix. The $m_{ij}$ within-study random effect that captures the variability at the observation level is modelled as the residual error in this model. 
 
 ```{r}
 #Fit glmmTMB model with equalto --------------------------------------------
 fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
                        data=dat,
                        REML=T)
-summary(fit.equalto)
 ```
 
-
-Let's compare with metafor
-*** add more info about what each part is in comparison to glmmTMB
-
+Let's compare with the `metafor` package `rma.mv` function that fits a multilevel model with random effects. Here the model is specified with two random effects: `(1|study)` and `(1|id)`, corresponding to the among-study ($u_i$) and within-study ($m_{ij}$) random effects, respectively. The sampling errors $e_{ij}$ VCV matrix is specified using the `V` argument.
 
 ```{r}
 # Fit metafor model
@@ -171,8 +164,8 @@ metafor <- data.frame(model = "metafor",
                       se = fit.metafor$se[[1]], 
                       zval = fit.metafor$zval,
                       pval = fit.metafor$pval,
-                      sigma.u = sqrt(fit.metafor$sigma2[1]),
-                      sigma.s = sqrt(fit.metafor$sigma2[2]),
+                      sigma.u = sqrt(fit.metafor$sigma2[1]), ## among study variance
+                      sigma.m = sqrt(fit.metafor$sigma2[2]), ## withins study variance
                       sigma.total = sum(sqrt((fit.metafor$sigma2))),
                       logLik = logLik(fit.metafor)[1],
                       df = attr(logLik(fit.metafor), "df"), ## model-based 
@@ -182,9 +175,9 @@ equalto <- data.frame(model = "equalto",
                       est = unlist(fixef(fit.equalto))[[1]],
                       se = as.numeric(sqrt(vcov(fit.equalto)[[1]])),
                       zval = summary(fit.equalto)$coefficients$cond[3],
-                      pval = summary(fit.equalto)$coefficients$cond[3],
-                      sigma.u = exp(fit.equalto$fit$par[[2]]),
-                      sigma.s = sigma(fit.equalto),
+                      pval = summary(fit.equalto)$coefficients$cond[4],
+                      sigma.u = exp(fit.equalto$fit$par[[2]]), ##among study variance estimate
+                      sigma.m = sigma(fit.equalto), ##within study variance estimate
                       sigma.total = sum(exp(fit.equalto$fit$par)),
                       logLik = logLik(fit.equalto),
                       df = attr(logLik(fit.equalto), "df"), ## model-based df
@@ -196,12 +189,15 @@ kable(output)
 
 ```
 
+The overall mean estimate and random effect variance estimates are identical across the two packages :-D To note though: the standard errors differ to the fourth decimal point (and hence also the z-value and p-value), as well as the log-likelihoods and residual degrees of freedom (which is expected?).
 
 
-# Comparison of `glmmTMB` with `metafor` and `nlme` R packages (using [this blog post](https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/))
 
-Let's compare the model estimates across two other packages. The following code is inspired from the post by J.E.Pustejovsky: [https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/](https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/)
+# Comparison of `glmmTMB` with `metafor` and `nlme` R packages (using code from [this blog post](https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/))
 
+Let's compare the model estimates across two other packages. The following code has been taken from the post by J.E.Pustejovsky.
+
+Here we will fit two types of models and compare results across different R packages: a basic random effect model and a three-level random effect model using `metafor`, `nlme`, and `glmmTMB`. We will store the model estimates, standard errors, degrees of freedom and log-likelihoods in a data frame for comparison. We also store $\tau$ which is the estimated standard deviation of the underlying true effect sizes across studies (also called the between-study heterogeneity).
 
 ## Basic random effect
 
@@ -231,7 +227,7 @@ bcg_example <- function(method = "REML", constant_var = FALSE) {
   LOR_mv <- with(LOR_mv_fit, 
                  data.frame(f = "rma.mv", 
                             logLik = logLik(LOR_mv_fit),
-                            df = attr(logLik(LOR_mv_fit), "df"),#model-based degrees of freedom, i.e. the number of (estimated) parameters
+                            df = attr(logLik(LOR_mv_fit), "df"), #model-based dfs, i.e. the number of (estimated) params
                             est = as.numeric(b), 
                             se = se, 
                             tau = sqrt(sigma2)))
@@ -293,108 +289,103 @@ bcg_example("ML", constant_var = TRUE)
 
 ```
 
+Here we see that glmmTMB is almost identical to `metafor` (assumed to be the standard results). A few things to note:
 
-## Bi-variate random effects model
+-   The log likelihood is different for glmmTMB when using `REML` (but it is the same as metafor when using`ML`).
+-   The standard error is different for glmmTMB to the fourth decimal point when the variance is not constant (`constant_var=FALSE`), but exactly the same when the variance is constant (`constant_var=TRUE`). 
 
+
+
+## Three-level random-effects model
 
 ```{r}
-
-bcg_bivariate <- function(method = "REML", constant_var = FALSE) {
+Konstantopoulos <- function(method = "REML", constant_var = FALSE) {
   
-  data(dat.bcg)
-  dat_long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-  levels(dat_long$group) <- c("exp", "con")
-  dat_long$group <- relevel(dat_long$group, ref="con")
-  dat_long$g <- 1
-  dat_long$ID <- as.factor(1:nrow(dat_long))
-  dat_long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat_long)
+  dat <- get(data(dat.konstantopoulos2011))
+  v_bar <- mean(dat$vi)
+  dat$g <- 1
+  dat$obs <- as.factor(1:nrow(dat))
+  if (constant_var) dat$vi <- v_bar
   
-  v_bar <- mean(dat_long$vi)
-  if (constant_var) dat_long$vi <- v_bar
+  # multilevel random-effects model using rma.mv()
+  ml_rma_fit <- rma.mv(yi, vi, random = ~ 1 | district/school, data=dat, method = method)
   
+  ml_rma <- with(ml_rma_fit, 
+                 data.frame(f = "rma.mv", 
+                            logLik = logLik(ml_rma_fit),
+                            df = attr(logLik(ml_rma_fit), "df"), 
+                            est = as.numeric(b), 
+                            se = se, 
+                            tau1 = sqrt(sigma2[1]), 
+                            tau2 = sqrt(sigma2[2])))
   
-  # bivariate random-effects model using rma.mv()
-  bv_rma_fit <- rma.mv(yi, vi, mods = ~ group, 
-                       random = ~ group | study, 
-                       struct = "UN", method = method,
-                       data=dat_long)
-  bv_rma <- with(bv_rma_fit, data.frame(f = "rma.mv",
-                                        logLik = logLik(bv_rma_fit),
-                                        df = attr(logLik(bv_rma_fit), "df"), 
-                                        est1 = as.numeric(b)[1], 
-                                        se1 = se[1], 
-                                        est2 = as.numeric(b)[2],
-                                        se2 = se[2],
-                                        tau1 = sqrt(tau2[1]),
-                                        tau2 = sqrt(tau2[2])))
-  
-  # bivariate random-effects model using lme()
+  # multilevel random-effects model using lme()
   if (constant_var) {
-    bv_lme_fit <- lme(yi ~ group, data = dat_long, method = method, 
-                      random = ~ group | study,
+    ml_lme_fit <- lme(yi ~ 1, data = dat, method = method, 
+                      random = ~ 1 | district / school,
                       control = lmeControl(sigma = sqrt(v_bar)))
-    tau_sq <- colSums(coef(bv_lme_fit$modelStruct$reStruct, unconstrained = FALSE) * matrix(c(1,0,0, 1,2,1), 3, 2)) * v_bar
+    tau <- sqrt(as.numeric(coef(ml_lme_fit$modelStruct$reStruct, unconstrained = FALSE)) * v_bar)
     
   } else {
-    bv_lme_fit <- lme(yi ~ group, data = dat_long, method = method, 
-                      random = ~ group | study,
+    ml_lme_fit <- lme(yi ~ 1, data = dat, method = method, 
+                      random = ~ 1 | district / school,
                       weights = varFixed(~ vi),
                       control = lmeControl(sigma = 1))
-    tau_sq <- colSums(coef(bv_lme_fit$modelStruct$reStruct, unconstrained = FALSE) * matrix(c(1,0,0, 1,2,1), 3, 2))
-  }
-  bv_lme <- data.frame(f = "lme",
-                       logLik = logLik(bv_lme_fit),
-                       df = attr(logLik(bv_lme_fit), "df"), 
-                       est1 = as.numeric(fixef(bv_lme_fit))[1],
-                       se1 = as.numeric(sqrt(diag(vcov(bv_lme_fit))))[1],
-                       est2 = as.numeric(fixef(bv_lme_fit))[2],
-                       se2 = as.numeric(sqrt(diag(vcov(bv_lme_fit))))[2],
-                       tau1 = sqrt(tau_sq[1]),
-                       tau2 = sqrt(tau_sq[2]))
+    tau <- sqrt(as.numeric(coef(ml_lme_fit$modelStruct$reStruct, unconstrained = FALSE)))
+    
+  }  
+  ml_lme <- data.frame(f = "lme",
+                       logLik = logLik(ml_lme_fit),
+                       df = attr(logLik(ml_lme_fit), "df"), 
+                       est = as.numeric(fixef(ml_lme_fit)),
+                       se = as.numeric(sqrt(diag(vcov(ml_lme_fit)))),
+                       tau1 = tau[2],
+                       tau2 = tau[1])
   
   
-  
-  # bivariate random-effects model using glmmTMB() and equalto
+  # multilevel random-effects model using glmmTMB()
   if (method=="REML") REML <- TRUE else REML <- FALSE
   
   if (constant_var) {
-    VCV <- diag(v_bar, nrow = nrow(dat_long))
-    bv_glmm_fit <- glmmTMB(yi ~ group + (group|study) + equalto(0 + ID|g,VCV), 
+    VCV <- diag(v_bar, nrow = nrow(dat))
+    ml_glmm_fit <- glmmTMB(yi ~ 1 + equalto(0 + obs|g,VCV) + (1|district),
                             REML = REML,
-                            data=dat_long)
-    tau <- c(exp(bv_glmm_fit$fit$par)[2:3]) 
-    ## 1st theta is random intercept study(intercept), 2nd is random slope study(groupexp), and 3rd is the covariance term 
-
+                            data=dat)
+    tau <- c(exp(ml_glmm_fit$fit$par)[["theta"]], sigma(ml_glmm_fit))
   } else {
-    VCV <- diag(dat_long$vi)
-    bv_glmm_fit <- glmmTMB(yi ~ group + (group|study) + equalto(0 + ID|g,VCV),
-                            REML = REML,
-                            data=dat_long)
-    tau <- c(exp(bv_glmm_fit$fit$par)[2:3]) 
+    VCV <- diag(dat$vi)
+    ml_glmm_fit <- glmmTMB(yi ~ 1 + equalto(0 + obs|g,VCV) + (1|district),
+                           REML = REML,
+                           data=dat)
+    tau <- c(exp(ml_glmm_fit$fit$par)[["theta"]], sigma(ml_glmm_fit))
   }
-  bv_glmm <- data.frame(f = "glmmTMB", 
-                        logLik = logLik(bv_glmm_fit)[1],
-                        df = attr(logLik(bv_glmm_fit), "df"), 
-                        est1 = as.numeric(unlist(fixef(bv_glmm_fit))[[1]]), 
-                        se1 = as.numeric(sqrt(diag(vcov(bv_glmm_fit)[[1]])))[1], 
-                        est2 = as.numeric(unlist(fixef(bv_glmm_fit))[[2]]), 
-                        se2 = as.numeric(sqrt(diag(vcov(bv_glmm_fit)[[1]])))[2], 
-                        tau1 = tau[1],
-                        tau2 = tau[2])
+  ml_glmm <- data.frame(f = "glmmTMB", 
+                         logLik = logLik(ml_glmm_fit)[1],
+                         df = attr(logLik(ml_glmm_fit), "df"), 
+                         est = as.numeric(unlist(fixef(ml_glmm_fit))[[1]]), 
+                         se = as.numeric(sqrt(vcov(ml_glmm_fit)[[1]])), 
+                         tau1 = tau[1],
+                         tau2 = tau[2])
   
   
-  
-  kable(rbind(bv_rma, bv_glmm, bv_lme))
+  kable(rbind(ml_rma, ml_glmm, ml_lme))
   
 }
 
-bcg_bivariate("REML", constant_var = FALSE)
-bcg_bivariate("REML", constant_var = TRUE)
+Konstantopoulos("REML", constant_var = FALSE)
+Konstantopoulos("REML", constant_var = TRUE)
 
-bcg_bivariate("ML", constant_var = FALSE) ##non-convergence for glmmTMB
-bcg_bivariate("ML", constant_var = TRUE) ##very different tau1 and ta2 for glmmTMB
+Konstantopoulos("ML", constant_var = FALSE)
+Konstantopoulos("ML", constant_var = TRUE)
 
 ```
+
+
+A few things to note for this multilevel model :
+
+
+-   The log likelihood is different for glmmTMB when using `REML` (but it is the same as metafor when using`ML`).
+-   The standard error is different for glmmTMB to the fourth decimal point for all models (still quite close but not exactly the same). 
 
 
 
@@ -402,18 +393,27 @@ bcg_bivariate("ML", constant_var = TRUE) ##very different tau1 and ta2 for glmmT
 
 # Speed comparison
 
+First let's test the speed of the simulated dataset with N=500 effect sizes across 50 studies.
+
 ```{r}
+#| cache: TRUE
+
 # for propto
 colnames(VCV) <- 1:nrow(dat)
 row.names(VCV) <- 1:nrow(dat)
 
 # using the data from the second simulation - this runs 100 times by default
 bench_fit <- microbenchmark(
-  metafor = rma.mv(y, VCV, random = list(~1 | study, ~1 | id),
+  metafor = rma.mv(y, VCV, random = list(~1 | study, ~1 | id), 
                    test = "t",
                    dfs = "contain",
                    data=dat),
-  equalto = glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
+  metafor.sparse = rma.mv(y, VCV, random = list(~1 | study, ~1 | id), 
+                   test = "t",
+                   dfs = "contain",
+                   sparse = TRUE, ##to check if it speeds up run time
+                   data=dat),                 
+  equalto = glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV), ### look into sparseX?
                     data=dat,
                     REML=T),
   propto = glmmTMB(y ~ 1 + (1|study) + propto(0 + obs|g,VCV), # expect it to be the same
@@ -423,21 +423,113 @@ bench_fit <- microbenchmark(
 
 bench_fit
 plot(bench_fit)
+
 ```
 
-Note: BLAS is installed on my session and seems to improve the performance of metafor a lot more. 
+The glmmTMB implementations are showing a fastest model run time (in seconds).
+
+Ok, but what happens if we increase the dataset size by 10-fold (N=5000), let's simulate a new dataframe now with 200 studies.
+
+```{r}
+# set up indices
+set.seed(123)
+k.studies <- 200 # number of studies
+k.per.study <- 25 # number of effect sizes per study
+study <- rep(seq_len(k.studies), times=k.per.study) # study id 
+k <- length(study) # total number of effect sizes
+id <- seq_len(k) # id of between study effect sizes 
+es.id <- unlist(lapply(k.per.study, seq_len)) # id of within study effect sizes
 
 
+# fixed effect coeff true value (i.e. the overall mean)
+b0 <- 0
+
+# simulate sampling errors variances
+vi <- rbeta(k, 2, 20)
+
+# get VCV matrix assuming within-study correlation of rho=0.5 
+VCV <- matrix(0, nrow = k, ncol = k) 
+for (i in 2:k) {
+  for (j in 1:i) {
+    if (study[i] == study[j]) {
+      VCV[i,j] <- 0.5 * sqrt(vi[i] * vi[j]) 
+    }
+  }
+}
+VCV[upper.tri(VCV)] <- t(VCV)[upper.tri(VCV)] # fill in upper diagonal
+diag(VCV) <- vi # fill in diagonal
+
+
+# random effects
+sigma2.u <- 0.2
+sigma2.m <- 0.3
+u <- rnorm(k.studies, 0, sqrt(sigma2.u))[study]
+m <- rnorm(k, 0, sqrt(sigma2.m))
+#e <- rnorm(k, 0, sqrt(vi))[study] #without within-study correlation (diag VCV)
+e <- mvrnorm(n = 1, mu = rep(0, length(vi)), Sigma = VCV) #excluding within-study correlation
+
+
+# compute y
+y <- b0 + u + m + e
+
+
+# combine into dataframe
+dat.big <- data.frame(y = y,
+                  vi = vi,
+                  study = study,
+                  id = id,
+                  es.id = es.id,
+                  obs = as.factor(id), # unique ID for propto and equalto (really important it is a factor variable)
+                  g = 1 # group ID for propto and equalto
+)
+```
+
+Run benchmark speed comparison again with `dat.big` for 5 iterations (as it takes very long otherwise) and plot the result:
+
+```{r}
+#| cache: TRUE
+#| eval: TRUE
+
+# for propto
+colnames(VCV) <- 1:nrow(dat.big)
+row.names(VCV) <- 1:nrow(dat.big)
+
+# using the data from the second simulation - this runs 100 times by default
+bench_bigfit <- microbenchmark(
+  metafor = rma.mv(y, VCV, random = list(~1 | study, ~1 | id),
+                   test = "t",
+                   dfs = "contain",
+                   data=dat.big),
+ metafor.sparse = rma.mv(y, VCV, random = list(~1 | study, ~1 | id), 
+                   test = "t",
+                   dfs = "contain",
+                   sparse = TRUE, # to speed up run time
+                   data=dat.big),   
+  equalto = glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
+                    data=dat.big,
+                    REML=T),
+ times=5
+)
+
+bench_bigfit
+plot(bench_bigfit)
+```
+
+Note: BLAS is installed on my session and seems to improve the performance of metafor more than glmmTMB. Also I only did n=5 iterations, here might be some more variability.
 
 # Next steps....
 
-Alternative strategy is to use Gaussian Markov Random Field in TMB cpp that uses the inverse of the covariance matrix.
+### Improve speed
 
-`density::GMRF_t`
-https://kaskr.github.io/adcomp/classdensity_1_1GMRF__t.html
+Alternative strategy for `equalto` is to use Gaussian Markov Random Field in TMB cpp that uses the inverse of the covariance matrix.
+`[density::GMRF_t](https://kaskr.github.io/adcomp/classdensity_1_1GMRF__t.html)`
 
+### Further notes
 
-# Session info 
+-   For `propto` and `equalto` do not show entire Std.Dev. and correlation matrix of the conditional model (only the `head()`?) in the summary output. When sample size is large it makes it unreadable.
+-   For `propto` and `equalto` show the random effect component (not scaled).
+
+# Session info
 
 ```{r}
 #| label: Reproducibility-SessionInfo-R-environment
@@ -447,8 +539,8 @@ https://kaskr.github.io/adcomp/classdensity_1_1GMRF__t.html
 #| message: false
 #| warnings: false
 
-#library(sessioninfo)
-#library(details)
+library(sessioninfo)
+library(details)
 
 #si <- session_info()
 #si$packages <- si$packages %>% 

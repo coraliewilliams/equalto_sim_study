@@ -165,15 +165,19 @@ bcg_bivariate <- function(method = "REML", constant_var = FALSE) {
     bv_glmm_fit <- glmmTMB(yi ~ group + (group|study) + equalto(0 + ID|g,VCV), 
                             REML = REML,
                             data=dat_long)
-    tau <- c(exp(bv_glmm_fit$fit$par)[2:3]) 
-    ## 1st theta is random intercept study(intercept), 2nd is random slope study(groupexp), and 3rd is the covariance term 
-
+    # get the variance-covariance matrix of the random effects
+    vc <- VarCorr(bv_glmm_fit)$cond$study
+    tau1_sq <- vc[1,1]  # τ² for baseline/ref group (cont)
+    tau2_sq <- vc[1,1] + vc[2,2] + 2*vc[1,2] # τ² for second group (exp) -- same as sum(vc)
   } else {
     VCV <- diag(dat_long$vi)
     bv_glmm_fit <- glmmTMB(yi ~ group + (group|study) + equalto(0 + ID|g,VCV),
                             REML = REML,
                             data=dat_long)
-    tau <- c(exp(bv_glmm_fit$fit$par)[2:3]) 
+    # get the variance-covariance matrix of the random effects
+    vc <- VarCorr(bv_glmm_fit)$cond$study
+    tau1_sq <- vc[1,1]  # τ² for baseline/ref group (cont)
+    tau2_sq <- vc[1,1] + vc[2,2] + 2*vc[1,2] # τ² for second group (exp) -- same as sum(vc)
   }
   bv_glmm <- data.frame(f = "glmmTMB", 
                         logLik = logLik(bv_glmm_fit)[1],
@@ -182,8 +186,8 @@ bcg_bivariate <- function(method = "REML", constant_var = FALSE) {
                         se1 = as.numeric(sqrt(diag(vcov(bv_glmm_fit)[[1]])))[1], 
                         est2 = as.numeric(unlist(fixef(bv_glmm_fit))[[2]]), 
                         se2 = as.numeric(sqrt(diag(vcov(bv_glmm_fit)[[1]])))[2], 
-                        tau1 = tau[1],
-                        tau2 = tau[2])
+                        tau1 = sqrt(tau1_sq), ##among study variance of reference group (con) 
+                        tau2 = sqrt(tau2_sq)) ##among study variance of experimental group (exp)
   
   
   
@@ -257,13 +261,13 @@ Konstantopoulos <- function(method = "REML", constant_var = FALSE) {
     ml_glmm_fit <- glmmTMB(yi ~ 1 + equalto(0 + obs|g,VCV) + (1|district),
                             REML = REML,
                             data=dat)
-    tau <- c(exp(ml_glmm_fit$fit$par)["theta"], sigma(ml_glmm_fit))
+    tau <- c(exp(ml_glmm_fit$fit$par)[["theta"]], sigma(ml_glmm_fit))
   } else {
     VCV <- diag(dat$vi)
     ml_glmm_fit <- glmmTMB(yi ~ 1 + equalto(0 + obs|g,VCV) + (1|district),
                            REML = REML,
                            data=dat)
-    tau <- c(exp(ml_glmm_fit$fit$par)["theta"], sigma(ml_glmm_fit))
+    tau <- c(exp(ml_glmm_fit$fit$par)[["theta"]], sigma(ml_glmm_fit))
   }
   ml_glmm <- data.frame(f = "glmmTMB", 
                          logLik = logLik(ml_glmm_fit)[1],
