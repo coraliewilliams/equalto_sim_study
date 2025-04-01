@@ -24,6 +24,9 @@ This webpage describes the `equalto` covariance structure within the `glmmTMB` p
 First, let's load the packages needed.
 
 ```{r}
+#| message: false
+#| warnings: false
+
 # load packages
 library(MASS)
 library(metafor)
@@ -42,7 +45,7 @@ We will install `glmmTMB` using the following branch branch: <https://github.com
 #| warnings: false
 
 # remove glmmTMB (if installed) and reload R
-#remove.packages("glmmTMB") 
+remove.packages("glmmTMB") 
 
 # build package from branch: https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc
 remotes::install_github("coraliewilliams/glmmTMB", ref="equalto_covstruc", subdir="glmmTMB")
@@ -426,9 +429,9 @@ plot(bench_fit)
 
 ```
 
-The glmmTMB implementations are showing a fastest model run time (in seconds).
+The glmmTMB implementations (equalto and propto) are showing a faster model run time (in seconds) compare to metafor default settings, however they are slower when metafor is used with the `sparse=TRUE` argument that speeds up matrix calculations.
 
-Ok, but what happens if we increase the dataset size by 10-fold (N=5000), let's simulate a new dataframe now with 200 studies.
+What happens if we increase the dataset size by 10-fold (N=5000), let's simulate a new dataframe (`dat.big`) with 200 studies.
 
 ```{r}
 # set up indices
@@ -484,7 +487,7 @@ dat.big <- data.frame(y = y,
 )
 ```
 
-Run benchmark speed comparison again with `dat.big` for 5 iterations (as it takes very long otherwise) and plot the result:
+Run benchmark speed comparison again with `dat.big` for 10 runs (as it takes very long) and plot the results:
 
 ```{r}
 #| cache: TRUE
@@ -515,7 +518,7 @@ bench_bigfit
 plot(bench_bigfit)
 ```
 
-Note: BLAS is installed on my session and seems to improve the performance of metafor more than glmmTMB. Also I only did n=5 iterations, here might be some more variability.
+Note: BLAS is installed on my session and seems to improve the speed performance of metafor more than glmmTMB. This results is over n=10 runs/times, there might be some variability in speed that is not captured here (I am planning to set up a simulation study to test this further).
 
 # Next steps....
 
@@ -542,10 +545,7 @@ Alternative strategy for `equalto` is to use Gaussian Markov Random Field in TMB
 library(sessioninfo)
 library(details)
 
-#si <- session_info()
-#si$packages <- si$packages %>% 
-#  filter(package %in% c("metafor", "glmmTMB", "TMB", "Matrix", "corpcor", "dplyr", "kableExtra", "lattice"))
-
-#details(si, summary = 'Current session info', open = FALSE)
+si <- session_info()
+details(si, summary = 'Current session info', open = FALSE)
 
 ```
