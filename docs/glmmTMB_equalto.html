@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Coralie Williams">
-<meta name="dcterms.date" content="2025-04-01">
+<meta name="dcterms.date" content="2025-04-02">
 
 <title>Meta-analysis with glmmTMB package equalto covariance structure</title>
 <style>
@@ -3261,7 +3261,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 1, 2025</p>
+      <p class="date">April 2, 2025</p>
     </div>
   </div>
   
@@ -3379,7 +3379,7 @@ y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
 </section>
 <section id="run-model" class="level3" data-number="2.0.2">
 <h3 data-number="2.0.2" class="anchored" data-anchor-id="run-model"><span class="header-section-number">2.0.2</span> Run model</h3>
-<p>Before we fit the glmmTMB model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of <span class="math inline">\(\rho=0.5\)</span>. The correlation of effect sizes not from the same study is assumed to be zero.</p>
+<p>Before we fit the glmmTMB model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of <span class="math inline">\(\rho=0.5\)</span>. The correlation between effect sizes from different studies is assumed to be zero.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>VCV <span class="ot">&lt;-</span> <span class="fu">vcalc</span>(vi, <span class="at">cluster=</span>study, <span class="at">obs=</span>obs, <span class="at">data=</span>dat, <span class="at">rho=</span><span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -4203,10 +4203,8 @@ y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
 </section>
 <section id="further-notes" class="level3" data-number="5.0.2">
 <h3 data-number="5.0.2" class="anchored" data-anchor-id="further-notes"><span class="header-section-number">5.0.2</span> Further notes</h3>
-<ul>
-<li>For <code>propto</code> and <code>equalto</code> do not show entire Std.Dev. and correlation matrix of the conditional model (only the <code>head()</code>?) in the summary output. When sample size is large it makes it unreadable.</li>
-<li>For <code>propto</code> and <code>equalto</code> show the random effect component (not scaled).</li>
-</ul>
+<p>Notes for potential future improvements in implementation: - For <code>propto</code> and <code>equalto</code> do not show entire Std.Dev. and correlation matrix of the conditional model (only the <code>head()</code>?) in the summary output. When sample size is large it makes it unreadable. - For <code>propto</code> and <code>equalto</code> show the random effect component (not scaled).</p>
+<p>Notes for future testing of equalto cov structure: - Make an example of a phylogenetic multilevel meta-analysis. - Make an example of a meta-analysis with a non-gaussian distribution (e.g. binomial, poisson)?</p>
 </section>
 </section>
 <section id="session-info" class="level1" data-number="6">
@@ -4232,7 +4230,7 @@ y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
 <span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a> collate  English_Australia.utf8</span>
 <span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a> ctype    English_Australia.utf8</span>
 <span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a> tz       Australia<span class="sc">/</span>Sydney</span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2025-04-01</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2025-04-02</span></span>
 <span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a> pandoc   <span class="fl">3.2</span> <span class="sc">@</span> C<span class="sc">:</span><span class="er">/</span>Program Files<span class="sc">/</span>RStudio<span class="sc">/</span>resources<span class="sc">/</span>app<span class="sc">/</span>bin<span class="sc">/</span>quarto<span class="sc">/</span>bin<span class="sc">/</span>tools<span class="sc">/</span> (via rmarkdown)</span>
 <span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>─ Packages ───────────────────────────────────────────────────────────────────</span>
@@ -4928,7 +4926,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb28-144"><a href="#cb28-144" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-145"><a href="#cb28-145" aria-hidden="true" tabindex="-1"></a><span class="fu">### Run model</span></span>
 <span id="cb28-146"><a href="#cb28-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-147"><a href="#cb28-147" aria-hidden="true" tabindex="-1"></a>Before we fit the glmmTMB model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of $\rho=0.5$. The correlation of effect sizes not from the same study is assumed to be zero.</span>
+<span id="cb28-147"><a href="#cb28-147" aria-hidden="true" tabindex="-1"></a>Before we fit the glmmTMB model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of $\rho=0.5$. The correlation between effect sizes from different studies is assumed to be zero.</span>
 <span id="cb28-148"><a href="#cb28-148" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-151"><a href="#cb28-151" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
 <span id="cb28-152"><a href="#cb28-152" aria-hidden="true" tabindex="-1"></a>VCV <span class="ot">&lt;-</span> <span class="fu">vcalc</span>(vi, <span class="at">cluster=</span>study, <span class="at">obs=</span>obs, <span class="at">data=</span>dat, <span class="at">rho=</span><span class="fl">0.5</span>)</span>
@@ -5226,121 +5224,129 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb28-454"><a href="#cb28-454" aria-hidden="true" tabindex="-1"></a>What happens if we increase the dataset size by 10-fold (N=5000), let&#39;s simulate a new dataframe (<span class="in">`dat.big`</span>) with 200 studies.</span>
 <span id="cb28-455"><a href="#cb28-455" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-458"><a href="#cb28-458" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb28-459"><a href="#cb28-459" aria-hidden="true" tabindex="-1"></a><span class="co"># set up indices</span></span>
-<span id="cb28-460"><a href="#cb28-460" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
-<span id="cb28-461"><a href="#cb28-461" aria-hidden="true" tabindex="-1"></a>k.studies <span class="ot">&lt;-</span> <span class="dv">200</span> <span class="co"># number of studies</span></span>
-<span id="cb28-462"><a href="#cb28-462" aria-hidden="true" tabindex="-1"></a>k.per.study <span class="ot">&lt;-</span> <span class="dv">25</span> <span class="co"># number of effect sizes per study</span></span>
-<span id="cb28-463"><a href="#cb28-463" aria-hidden="true" tabindex="-1"></a>study <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">seq_len</span>(k.studies), <span class="at">times=</span>k.per.study) <span class="co"># study id </span></span>
-<span id="cb28-464"><a href="#cb28-464" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="fu">length</span>(study) <span class="co"># total number of effect sizes</span></span>
-<span id="cb28-465"><a href="#cb28-465" aria-hidden="true" tabindex="-1"></a>id <span class="ot">&lt;-</span> <span class="fu">seq_len</span>(k) <span class="co"># id of between study effect sizes </span></span>
-<span id="cb28-466"><a href="#cb28-466" aria-hidden="true" tabindex="-1"></a>es.id <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(k.per.study, seq_len)) <span class="co"># id of within study effect sizes</span></span>
-<span id="cb28-467"><a href="#cb28-467" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-468"><a href="#cb28-468" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-469"><a href="#cb28-469" aria-hidden="true" tabindex="-1"></a><span class="co"># fixed effect coeff true value (i.e. the overall mean)</span></span>
-<span id="cb28-470"><a href="#cb28-470" aria-hidden="true" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb28-471"><a href="#cb28-471" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-472"><a href="#cb28-472" aria-hidden="true" tabindex="-1"></a><span class="co"># simulate sampling errors variances</span></span>
-<span id="cb28-473"><a href="#cb28-473" aria-hidden="true" tabindex="-1"></a>vi <span class="ot">&lt;-</span> <span class="fu">rbeta</span>(k, <span class="dv">2</span>, <span class="dv">20</span>)</span>
-<span id="cb28-474"><a href="#cb28-474" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-475"><a href="#cb28-475" aria-hidden="true" tabindex="-1"></a><span class="co"># get VCV matrix assuming within-study correlation of rho=0.5 </span></span>
-<span id="cb28-476"><a href="#cb28-476" aria-hidden="true" tabindex="-1"></a>VCV <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> k, <span class="at">ncol =</span> k) </span>
-<span id="cb28-477"><a href="#cb28-477" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>k) {</span>
-<span id="cb28-478"><a href="#cb28-478" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>i) {</span>
-<span id="cb28-479"><a href="#cb28-479" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (study[i] <span class="sc">==</span> study[j]) {</span>
-<span id="cb28-480"><a href="#cb28-480" aria-hidden="true" tabindex="-1"></a>      VCV[i,j] <span class="ot">&lt;-</span> <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">sqrt</span>(vi[i] <span class="sc">*</span> vi[j]) </span>
-<span id="cb28-481"><a href="#cb28-481" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb28-482"><a href="#cb28-482" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb28-483"><a href="#cb28-483" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb28-484"><a href="#cb28-484" aria-hidden="true" tabindex="-1"></a>VCV[<span class="fu">upper.tri</span>(VCV)] <span class="ot">&lt;-</span> <span class="fu">t</span>(VCV)[<span class="fu">upper.tri</span>(VCV)] <span class="co"># fill in upper diagonal</span></span>
-<span id="cb28-485"><a href="#cb28-485" aria-hidden="true" tabindex="-1"></a><span class="fu">diag</span>(VCV) <span class="ot">&lt;-</span> vi <span class="co"># fill in diagonal</span></span>
-<span id="cb28-486"><a href="#cb28-486" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-487"><a href="#cb28-487" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-488"><a href="#cb28-488" aria-hidden="true" tabindex="-1"></a><span class="co"># random effects</span></span>
-<span id="cb28-489"><a href="#cb28-489" aria-hidden="true" tabindex="-1"></a>sigma2.u <span class="ot">&lt;-</span> <span class="fl">0.2</span></span>
-<span id="cb28-490"><a href="#cb28-490" aria-hidden="true" tabindex="-1"></a>sigma2.m <span class="ot">&lt;-</span> <span class="fl">0.3</span></span>
-<span id="cb28-491"><a href="#cb28-491" aria-hidden="true" tabindex="-1"></a>u <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(k.studies, <span class="dv">0</span>, <span class="fu">sqrt</span>(sigma2.u))[study]</span>
-<span id="cb28-492"><a href="#cb28-492" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(k, <span class="dv">0</span>, <span class="fu">sqrt</span>(sigma2.m))</span>
-<span id="cb28-493"><a href="#cb28-493" aria-hidden="true" tabindex="-1"></a><span class="co">#e &lt;- rnorm(k, 0, sqrt(vi))[study] #without within-study correlation (diag VCV)</span></span>
-<span id="cb28-494"><a href="#cb28-494" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">mvrnorm</span>(<span class="at">n =</span> <span class="dv">1</span>, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(vi)), <span class="at">Sigma =</span> VCV) <span class="co">#excluding within-study correlation</span></span>
-<span id="cb28-495"><a href="#cb28-495" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-496"><a href="#cb28-496" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-497"><a href="#cb28-497" aria-hidden="true" tabindex="-1"></a><span class="co"># compute y</span></span>
-<span id="cb28-498"><a href="#cb28-498" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> b0 <span class="sc">+</span> u <span class="sc">+</span> m <span class="sc">+</span> e</span>
-<span id="cb28-499"><a href="#cb28-499" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-500"><a href="#cb28-500" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-501"><a href="#cb28-501" aria-hidden="true" tabindex="-1"></a><span class="co"># combine into dataframe</span></span>
-<span id="cb28-502"><a href="#cb28-502" aria-hidden="true" tabindex="-1"></a>dat.big <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> y,</span>
-<span id="cb28-503"><a href="#cb28-503" aria-hidden="true" tabindex="-1"></a>                  <span class="at">vi =</span> vi,</span>
-<span id="cb28-504"><a href="#cb28-504" aria-hidden="true" tabindex="-1"></a>                  <span class="at">study =</span> study,</span>
-<span id="cb28-505"><a href="#cb28-505" aria-hidden="true" tabindex="-1"></a>                  <span class="at">id =</span> id,</span>
-<span id="cb28-506"><a href="#cb28-506" aria-hidden="true" tabindex="-1"></a>                  <span class="at">es.id =</span> es.id,</span>
-<span id="cb28-507"><a href="#cb28-507" aria-hidden="true" tabindex="-1"></a>                  <span class="at">obs =</span> <span class="fu">as.factor</span>(id), <span class="co"># unique ID for propto and equalto (really important it is a factor variable)</span></span>
-<span id="cb28-508"><a href="#cb28-508" aria-hidden="true" tabindex="-1"></a>                  <span class="at">g =</span> <span class="dv">1</span> <span class="co"># group ID for propto and equalto</span></span>
-<span id="cb28-509"><a href="#cb28-509" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb28-510"><a href="#cb28-510" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb28-511"><a href="#cb28-511" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-512"><a href="#cb28-512" aria-hidden="true" tabindex="-1"></a>Run benchmark speed comparison again with <span class="in">`dat.big`</span> for 10 runs (as it takes very long) and plot the results:</span>
+<span id="cb28-459"><a href="#cb28-459" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: TRUE</span></span>
+<span id="cb28-460"><a href="#cb28-460" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-461"><a href="#cb28-461" aria-hidden="true" tabindex="-1"></a><span class="co"># set up indices</span></span>
+<span id="cb28-462"><a href="#cb28-462" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb28-463"><a href="#cb28-463" aria-hidden="true" tabindex="-1"></a>k.studies <span class="ot">&lt;-</span> <span class="dv">200</span> <span class="co"># number of studies</span></span>
+<span id="cb28-464"><a href="#cb28-464" aria-hidden="true" tabindex="-1"></a>k.per.study <span class="ot">&lt;-</span> <span class="dv">25</span> <span class="co"># number of effect sizes per study</span></span>
+<span id="cb28-465"><a href="#cb28-465" aria-hidden="true" tabindex="-1"></a>study <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">seq_len</span>(k.studies), <span class="at">times=</span>k.per.study) <span class="co"># study id </span></span>
+<span id="cb28-466"><a href="#cb28-466" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="fu">length</span>(study) <span class="co"># total number of effect sizes</span></span>
+<span id="cb28-467"><a href="#cb28-467" aria-hidden="true" tabindex="-1"></a>id <span class="ot">&lt;-</span> <span class="fu">seq_len</span>(k) <span class="co"># id of between study effect sizes </span></span>
+<span id="cb28-468"><a href="#cb28-468" aria-hidden="true" tabindex="-1"></a>es.id <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(k.per.study, seq_len)) <span class="co"># id of within study effect sizes</span></span>
+<span id="cb28-469"><a href="#cb28-469" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-470"><a href="#cb28-470" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-471"><a href="#cb28-471" aria-hidden="true" tabindex="-1"></a><span class="co"># fixed effect coeff true value (i.e. the overall mean)</span></span>
+<span id="cb28-472"><a href="#cb28-472" aria-hidden="true" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb28-473"><a href="#cb28-473" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-474"><a href="#cb28-474" aria-hidden="true" tabindex="-1"></a><span class="co"># simulate sampling errors variances</span></span>
+<span id="cb28-475"><a href="#cb28-475" aria-hidden="true" tabindex="-1"></a>vi <span class="ot">&lt;-</span> <span class="fu">rbeta</span>(k, <span class="dv">2</span>, <span class="dv">20</span>)</span>
+<span id="cb28-476"><a href="#cb28-476" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-477"><a href="#cb28-477" aria-hidden="true" tabindex="-1"></a><span class="co"># get VCV matrix assuming within-study correlation of rho=0.5 </span></span>
+<span id="cb28-478"><a href="#cb28-478" aria-hidden="true" tabindex="-1"></a>VCV <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> k, <span class="at">ncol =</span> k) </span>
+<span id="cb28-479"><a href="#cb28-479" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>k) {</span>
+<span id="cb28-480"><a href="#cb28-480" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>i) {</span>
+<span id="cb28-481"><a href="#cb28-481" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (study[i] <span class="sc">==</span> study[j]) {</span>
+<span id="cb28-482"><a href="#cb28-482" aria-hidden="true" tabindex="-1"></a>      VCV[i,j] <span class="ot">&lt;-</span> <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">sqrt</span>(vi[i] <span class="sc">*</span> vi[j]) </span>
+<span id="cb28-483"><a href="#cb28-483" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb28-484"><a href="#cb28-484" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb28-485"><a href="#cb28-485" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb28-486"><a href="#cb28-486" aria-hidden="true" tabindex="-1"></a>VCV[<span class="fu">upper.tri</span>(VCV)] <span class="ot">&lt;-</span> <span class="fu">t</span>(VCV)[<span class="fu">upper.tri</span>(VCV)] <span class="co"># fill in upper diagonal</span></span>
+<span id="cb28-487"><a href="#cb28-487" aria-hidden="true" tabindex="-1"></a><span class="fu">diag</span>(VCV) <span class="ot">&lt;-</span> vi <span class="co"># fill in diagonal</span></span>
+<span id="cb28-488"><a href="#cb28-488" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-489"><a href="#cb28-489" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-490"><a href="#cb28-490" aria-hidden="true" tabindex="-1"></a><span class="co"># random effects</span></span>
+<span id="cb28-491"><a href="#cb28-491" aria-hidden="true" tabindex="-1"></a>sigma2.u <span class="ot">&lt;-</span> <span class="fl">0.2</span></span>
+<span id="cb28-492"><a href="#cb28-492" aria-hidden="true" tabindex="-1"></a>sigma2.m <span class="ot">&lt;-</span> <span class="fl">0.3</span></span>
+<span id="cb28-493"><a href="#cb28-493" aria-hidden="true" tabindex="-1"></a>u <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(k.studies, <span class="dv">0</span>, <span class="fu">sqrt</span>(sigma2.u))[study]</span>
+<span id="cb28-494"><a href="#cb28-494" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(k, <span class="dv">0</span>, <span class="fu">sqrt</span>(sigma2.m))</span>
+<span id="cb28-495"><a href="#cb28-495" aria-hidden="true" tabindex="-1"></a><span class="co">#e &lt;- rnorm(k, 0, sqrt(vi))[study] #without within-study correlation (diag VCV)</span></span>
+<span id="cb28-496"><a href="#cb28-496" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">mvrnorm</span>(<span class="at">n =</span> <span class="dv">1</span>, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(vi)), <span class="at">Sigma =</span> VCV) <span class="co">#excluding within-study correlation</span></span>
+<span id="cb28-497"><a href="#cb28-497" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-498"><a href="#cb28-498" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-499"><a href="#cb28-499" aria-hidden="true" tabindex="-1"></a><span class="co"># compute y</span></span>
+<span id="cb28-500"><a href="#cb28-500" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> b0 <span class="sc">+</span> u <span class="sc">+</span> m <span class="sc">+</span> e</span>
+<span id="cb28-501"><a href="#cb28-501" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-502"><a href="#cb28-502" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-503"><a href="#cb28-503" aria-hidden="true" tabindex="-1"></a><span class="co"># combine into dataframe</span></span>
+<span id="cb28-504"><a href="#cb28-504" aria-hidden="true" tabindex="-1"></a>dat.big <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> y,</span>
+<span id="cb28-505"><a href="#cb28-505" aria-hidden="true" tabindex="-1"></a>                  <span class="at">vi =</span> vi,</span>
+<span id="cb28-506"><a href="#cb28-506" aria-hidden="true" tabindex="-1"></a>                  <span class="at">study =</span> study,</span>
+<span id="cb28-507"><a href="#cb28-507" aria-hidden="true" tabindex="-1"></a>                  <span class="at">id =</span> id,</span>
+<span id="cb28-508"><a href="#cb28-508" aria-hidden="true" tabindex="-1"></a>                  <span class="at">es.id =</span> es.id,</span>
+<span id="cb28-509"><a href="#cb28-509" aria-hidden="true" tabindex="-1"></a>                  <span class="at">obs =</span> <span class="fu">as.factor</span>(id), <span class="co"># unique ID for propto and equalto (really important it is a factor variable)</span></span>
+<span id="cb28-510"><a href="#cb28-510" aria-hidden="true" tabindex="-1"></a>                  <span class="at">g =</span> <span class="dv">1</span> <span class="co"># group ID for propto and equalto</span></span>
+<span id="cb28-511"><a href="#cb28-511" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-512"><a href="#cb28-512" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb28-513"><a href="#cb28-513" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-516"><a href="#cb28-516" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb28-517"><a href="#cb28-517" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: TRUE</span></span>
-<span id="cb28-518"><a href="#cb28-518" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: TRUE</span></span>
-<span id="cb28-519"><a href="#cb28-519" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-520"><a href="#cb28-520" aria-hidden="true" tabindex="-1"></a><span class="co"># for propto</span></span>
-<span id="cb28-521"><a href="#cb28-521" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(VCV) <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat.big)</span>
-<span id="cb28-522"><a href="#cb28-522" aria-hidden="true" tabindex="-1"></a><span class="fu">row.names</span>(VCV) <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat.big)</span>
-<span id="cb28-523"><a href="#cb28-523" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-524"><a href="#cb28-524" aria-hidden="true" tabindex="-1"></a><span class="co"># using the data from the second simulation - this runs 100 times by default</span></span>
-<span id="cb28-525"><a href="#cb28-525" aria-hidden="true" tabindex="-1"></a>bench_bigfit <span class="ot">&lt;-</span> <span class="fu">microbenchmark</span>(</span>
-<span id="cb28-526"><a href="#cb28-526" aria-hidden="true" tabindex="-1"></a>  <span class="at">metafor =</span> <span class="fu">rma.mv</span>(y, VCV, <span class="at">random =</span> <span class="fu">list</span>(<span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> study, <span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> id),</span>
-<span id="cb28-527"><a href="#cb28-527" aria-hidden="true" tabindex="-1"></a>                   <span class="at">test =</span> <span class="st">&quot;t&quot;</span>,</span>
-<span id="cb28-528"><a href="#cb28-528" aria-hidden="true" tabindex="-1"></a>                   <span class="at">dfs =</span> <span class="st">&quot;contain&quot;</span>,</span>
-<span id="cb28-529"><a href="#cb28-529" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data=</span>dat.big),</span>
-<span id="cb28-530"><a href="#cb28-530" aria-hidden="true" tabindex="-1"></a> <span class="at">metafor.sparse =</span> <span class="fu">rma.mv</span>(y, VCV, <span class="at">random =</span> <span class="fu">list</span>(<span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> study, <span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> id), </span>
-<span id="cb28-531"><a href="#cb28-531" aria-hidden="true" tabindex="-1"></a>                   <span class="at">test =</span> <span class="st">&quot;t&quot;</span>,</span>
-<span id="cb28-532"><a href="#cb28-532" aria-hidden="true" tabindex="-1"></a>                   <span class="at">dfs =</span> <span class="st">&quot;contain&quot;</span>,</span>
-<span id="cb28-533"><a href="#cb28-533" aria-hidden="true" tabindex="-1"></a>                   <span class="at">sparse =</span> <span class="cn">TRUE</span>, <span class="co"># to speed up run time</span></span>
-<span id="cb28-534"><a href="#cb28-534" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data=</span>dat.big),   </span>
-<span id="cb28-535"><a href="#cb28-535" aria-hidden="true" tabindex="-1"></a>  <span class="at">equalto =</span> <span class="fu">glmmTMB</span>(y <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>study) <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> obs<span class="sc">|</span>g,VCV),</span>
-<span id="cb28-536"><a href="#cb28-536" aria-hidden="true" tabindex="-1"></a>                    <span class="at">data=</span>dat.big,</span>
-<span id="cb28-537"><a href="#cb28-537" aria-hidden="true" tabindex="-1"></a>                    <span class="at">REML=</span>T),</span>
-<span id="cb28-538"><a href="#cb28-538" aria-hidden="true" tabindex="-1"></a> <span class="at">times=</span><span class="dv">5</span></span>
-<span id="cb28-539"><a href="#cb28-539" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb28-540"><a href="#cb28-540" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-541"><a href="#cb28-541" aria-hidden="true" tabindex="-1"></a>bench_bigfit</span>
-<span id="cb28-542"><a href="#cb28-542" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(bench_bigfit)</span>
-<span id="cb28-543"><a href="#cb28-543" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb28-544"><a href="#cb28-544" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-545"><a href="#cb28-545" aria-hidden="true" tabindex="-1"></a>Note: BLAS is installed on my session and seems to improve the speed performance of metafor more than glmmTMB. This results is over n=10 runs/times, there might be some variability in speed that is not captured here (I am planning to set up a simulation study to test this further).</span>
+<span id="cb28-514"><a href="#cb28-514" aria-hidden="true" tabindex="-1"></a>Run benchmark speed comparison again with <span class="in">`dat.big`</span> for 10 runs (as it takes very long) and plot the results:</span>
+<span id="cb28-515"><a href="#cb28-515" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-518"><a href="#cb28-518" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb28-519"><a href="#cb28-519" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: TRUE</span></span>
+<span id="cb28-520"><a href="#cb28-520" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: TRUE</span></span>
+<span id="cb28-521"><a href="#cb28-521" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-522"><a href="#cb28-522" aria-hidden="true" tabindex="-1"></a><span class="co"># for propto</span></span>
+<span id="cb28-523"><a href="#cb28-523" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(VCV) <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat.big)</span>
+<span id="cb28-524"><a href="#cb28-524" aria-hidden="true" tabindex="-1"></a><span class="fu">row.names</span>(VCV) <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat.big)</span>
+<span id="cb28-525"><a href="#cb28-525" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-526"><a href="#cb28-526" aria-hidden="true" tabindex="-1"></a><span class="co"># using the data from the second simulation - this runs 100 times by default</span></span>
+<span id="cb28-527"><a href="#cb28-527" aria-hidden="true" tabindex="-1"></a>bench_bigfit <span class="ot">&lt;-</span> <span class="fu">microbenchmark</span>(</span>
+<span id="cb28-528"><a href="#cb28-528" aria-hidden="true" tabindex="-1"></a>  <span class="at">metafor =</span> <span class="fu">rma.mv</span>(y, VCV, <span class="at">random =</span> <span class="fu">list</span>(<span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> study, <span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> id),</span>
+<span id="cb28-529"><a href="#cb28-529" aria-hidden="true" tabindex="-1"></a>                   <span class="at">test =</span> <span class="st">&quot;t&quot;</span>,</span>
+<span id="cb28-530"><a href="#cb28-530" aria-hidden="true" tabindex="-1"></a>                   <span class="at">dfs =</span> <span class="st">&quot;contain&quot;</span>,</span>
+<span id="cb28-531"><a href="#cb28-531" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data=</span>dat.big),</span>
+<span id="cb28-532"><a href="#cb28-532" aria-hidden="true" tabindex="-1"></a> <span class="at">metafor.sparse =</span> <span class="fu">rma.mv</span>(y, VCV, <span class="at">random =</span> <span class="fu">list</span>(<span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> study, <span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> id), </span>
+<span id="cb28-533"><a href="#cb28-533" aria-hidden="true" tabindex="-1"></a>                   <span class="at">test =</span> <span class="st">&quot;t&quot;</span>,</span>
+<span id="cb28-534"><a href="#cb28-534" aria-hidden="true" tabindex="-1"></a>                   <span class="at">dfs =</span> <span class="st">&quot;contain&quot;</span>,</span>
+<span id="cb28-535"><a href="#cb28-535" aria-hidden="true" tabindex="-1"></a>                   <span class="at">sparse =</span> <span class="cn">TRUE</span>, <span class="co"># to speed up run time</span></span>
+<span id="cb28-536"><a href="#cb28-536" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data=</span>dat.big),   </span>
+<span id="cb28-537"><a href="#cb28-537" aria-hidden="true" tabindex="-1"></a>  <span class="at">equalto =</span> <span class="fu">glmmTMB</span>(y <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>study) <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> obs<span class="sc">|</span>g,VCV),</span>
+<span id="cb28-538"><a href="#cb28-538" aria-hidden="true" tabindex="-1"></a>                    <span class="at">data=</span>dat.big,</span>
+<span id="cb28-539"><a href="#cb28-539" aria-hidden="true" tabindex="-1"></a>                    <span class="at">REML=</span>T),</span>
+<span id="cb28-540"><a href="#cb28-540" aria-hidden="true" tabindex="-1"></a> <span class="at">times=</span><span class="dv">5</span></span>
+<span id="cb28-541"><a href="#cb28-541" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-542"><a href="#cb28-542" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-543"><a href="#cb28-543" aria-hidden="true" tabindex="-1"></a>bench_bigfit</span>
+<span id="cb28-544"><a href="#cb28-544" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(bench_bigfit)</span>
+<span id="cb28-545"><a href="#cb28-545" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb28-546"><a href="#cb28-546" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-547"><a href="#cb28-547" aria-hidden="true" tabindex="-1"></a><span class="fu"># Next steps....</span></span>
+<span id="cb28-547"><a href="#cb28-547" aria-hidden="true" tabindex="-1"></a>Note: BLAS is installed on my session and seems to improve the speed performance of metafor more than glmmTMB. This results is over n=10 runs/times, there might be some variability in speed that is not captured here (I am planning to set up a simulation study to test this further).</span>
 <span id="cb28-548"><a href="#cb28-548" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-549"><a href="#cb28-549" aria-hidden="true" tabindex="-1"></a><span class="fu">### Improve speed</span></span>
+<span id="cb28-549"><a href="#cb28-549" aria-hidden="true" tabindex="-1"></a><span class="fu"># Next steps....</span></span>
 <span id="cb28-550"><a href="#cb28-550" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-551"><a href="#cb28-551" aria-hidden="true" tabindex="-1"></a>Alternative strategy for <span class="in">`equalto`</span> is to use Gaussian Markov Random Field in TMB cpp that uses the inverse of the covariance matrix.</span>
-<span id="cb28-552"><a href="#cb28-552" aria-hidden="true" tabindex="-1"></a><span class="in">`[density::GMRF_t](https://kaskr.github.io/adcomp/classdensity_1_1GMRF__t.html)`</span></span>
-<span id="cb28-553"><a href="#cb28-553" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-554"><a href="#cb28-554" aria-hidden="true" tabindex="-1"></a><span class="fu">### Further notes</span></span>
+<span id="cb28-551"><a href="#cb28-551" aria-hidden="true" tabindex="-1"></a><span class="fu">### Improve speed</span></span>
+<span id="cb28-552"><a href="#cb28-552" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-553"><a href="#cb28-553" aria-hidden="true" tabindex="-1"></a>Alternative strategy for <span class="in">`equalto`</span> is to use Gaussian Markov Random Field in TMB cpp that uses the inverse of the covariance matrix.</span>
+<span id="cb28-554"><a href="#cb28-554" aria-hidden="true" tabindex="-1"></a><span class="in">`[density::GMRF_t](https://kaskr.github.io/adcomp/classdensity_1_1GMRF__t.html)`</span></span>
 <span id="cb28-555"><a href="#cb28-555" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-556"><a href="#cb28-556" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>For <span class="in">`propto`</span> and <span class="in">`equalto`</span> do not show entire Std.Dev. and correlation matrix of the conditional model (only the <span class="in">`head()`</span>?) in the summary output. When sample size is large it makes it unreadable.</span>
-<span id="cb28-557"><a href="#cb28-557" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>For <span class="in">`propto`</span> and <span class="in">`equalto`</span> show the random effect component (not scaled).</span>
-<span id="cb28-558"><a href="#cb28-558" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-559"><a href="#cb28-559" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session info</span></span>
-<span id="cb28-560"><a href="#cb28-560" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-563"><a href="#cb28-563" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb28-564"><a href="#cb28-564" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: Reproducibility-SessionInfo-R-environment</span></span>
-<span id="cb28-565"><a href="#cb28-565" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-align: &quot;center&quot;</span></span>
-<span id="cb28-566"><a href="#cb28-566" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: &#39;100%&#39;</span></span>
-<span id="cb28-567"><a href="#cb28-567" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: asis</span></span>
-<span id="cb28-568"><a href="#cb28-568" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb28-569"><a href="#cb28-569" aria-hidden="true" tabindex="-1"></a><span class="co">#| warnings: false</span></span>
-<span id="cb28-570"><a href="#cb28-570" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-571"><a href="#cb28-571" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sessioninfo)</span>
-<span id="cb28-572"><a href="#cb28-572" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(details)</span>
-<span id="cb28-573"><a href="#cb28-573" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-574"><a href="#cb28-574" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> <span class="fu">session_info</span>()</span>
-<span id="cb28-575"><a href="#cb28-575" aria-hidden="true" tabindex="-1"></a><span class="fu">details</span>(si, <span class="at">summary =</span> <span class="st">&#39;Current session info&#39;</span>, <span class="at">open =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb28-576"><a href="#cb28-576" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-577"><a href="#cb28-577" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb28-556"><a href="#cb28-556" aria-hidden="true" tabindex="-1"></a><span class="fu">### Further notes</span></span>
+<span id="cb28-557"><a href="#cb28-557" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-558"><a href="#cb28-558" aria-hidden="true" tabindex="-1"></a>Notes for potential future improvements in implementation:</span>
+<span id="cb28-559"><a href="#cb28-559" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>For <span class="in">`propto`</span> and <span class="in">`equalto`</span> do not show entire Std.Dev. and correlation matrix of the conditional model (only the <span class="in">`head()`</span>?) in the summary output. When sample size is large it makes it unreadable.</span>
+<span id="cb28-560"><a href="#cb28-560" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>For <span class="in">`propto`</span> and <span class="in">`equalto`</span> show the random effect component (not scaled).</span>
+<span id="cb28-561"><a href="#cb28-561" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-562"><a href="#cb28-562" aria-hidden="true" tabindex="-1"></a>Notes for future testing of equalto cov structure:</span>
+<span id="cb28-563"><a href="#cb28-563" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Make an example of a phylogenetic multilevel meta-analysis.</span>
+<span id="cb28-564"><a href="#cb28-564" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Make an example of a meta-analysis with a non-gaussian distribution (e.g. binomial, poisson)?</span>
+<span id="cb28-565"><a href="#cb28-565" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-566"><a href="#cb28-566" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-567"><a href="#cb28-567" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session info</span></span>
+<span id="cb28-568"><a href="#cb28-568" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-571"><a href="#cb28-571" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb28-572"><a href="#cb28-572" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: Reproducibility-SessionInfo-R-environment</span></span>
+<span id="cb28-573"><a href="#cb28-573" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-align: &quot;center&quot;</span></span>
+<span id="cb28-574"><a href="#cb28-574" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: &#39;100%&#39;</span></span>
+<span id="cb28-575"><a href="#cb28-575" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: asis</span></span>
+<span id="cb28-576"><a href="#cb28-576" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb28-577"><a href="#cb28-577" aria-hidden="true" tabindex="-1"></a><span class="co">#| warnings: false</span></span>
+<span id="cb28-578"><a href="#cb28-578" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-579"><a href="#cb28-579" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sessioninfo)</span>
+<span id="cb28-580"><a href="#cb28-580" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(details)</span>
+<span id="cb28-581"><a href="#cb28-581" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-582"><a href="#cb28-582" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> <span class="fu">session_info</span>()</span>
+<span id="cb28-583"><a href="#cb28-583" aria-hidden="true" tabindex="-1"></a><span class="fu">details</span>(si, <span class="at">summary =</span> <span class="st">&#39;Current session info&#39;</span>, <span class="at">open =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb28-584"><a href="#cb28-584" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-585"><a href="#cb28-585" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

@@ -136,7 +136,7 @@ dat <- data.frame(y = y,
 
 ### Run model
 
-Before we fit the glmmTMB model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of $\rho=0.5$. The correlation of effect sizes not from the same study is assumed to be zero.
+Before we fit the glmmTMB model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of $\rho=0.5$. The correlation between effect sizes from different studies is assumed to be zero.
 
 ```{r}
 VCV <- vcalc(vi, cluster=study, obs=obs, data=dat, rho=0.5)
@@ -434,6 +434,8 @@ The glmmTMB implementations (equalto and propto) are showing a faster model run 
 What happens if we increase the dataset size by 10-fold (N=5000), let's simulate a new dataframe (`dat.big`) with 200 studies.
 
 ```{r}
+#| cache: TRUE
+
 # set up indices
 set.seed(123)
 k.studies <- 200 # number of studies
@@ -529,8 +531,14 @@ Alternative strategy for `equalto` is to use Gaussian Markov Random Field in TMB
 
 ### Further notes
 
+Notes for potential future improvements in implementation:
 -   For `propto` and `equalto` do not show entire Std.Dev. and correlation matrix of the conditional model (only the `head()`?) in the summary output. When sample size is large it makes it unreadable.
 -   For `propto` and `equalto` show the random effect component (not scaled).
+
+Notes for future testing of equalto cov structure:
+-   Make an example of a phylogenetic multilevel meta-analysis.
+-   Make an example of a meta-analysis with a non-gaussian distribution (e.g. binomial, poisson)?
+
 
 # Session info
 
