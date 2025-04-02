@@ -73,7 +73,7 @@ $$
 y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
 $$
 
-where $i$ indexes studies and $j$ indexes effect sizes within study $i$. Here, $b_0$ is the overall mean effect, $u_i \sim N(0, \sigma^2_{u}I)$ represents the among-study random effect, $m_{ij} \sim N(0, \sigma^2_{m}I)$ captures the within-study random effect (at the observation-level), and $e_{ij} \sim N(0, \text{VCV})$ are the sampling errors at the observation-level. $\text{VCV}$ represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances $\sigma^2_{e}=vi$ on the diagonal and accounts for correlations among effect sizes from the same study.
+where $i$ indexes studies and $j$ indexes effect sizes within study $i$. Here, $b_0$ is the overall mean effect, $u_i \sim N(0, \sigma^2_{u}I)$ represents the among-study random effect, $m_{ij} \sim N(0, \sigma^2_{m}I)$ captures the within-study random effect (at the observation-level), and $e_{ij} \sim N(0, \text{VCV})$ are the sampling errors at the observation-level. $\text{VCV}$ represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances $\sigma^2_{e}=v_i$ on the diagonal and accounts for correlations among sampling errors from the same study.
 
 
 ### Simulate some data

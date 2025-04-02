@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Coralie Williams">
-<meta name="dcterms.date" content="2025-04-02">
+<meta name="dcterms.date" content="2025-04-03">
 
 <title>Meta-analysis with glmmTMB package equalto covariance structure</title>
 <style>
@@ -3261,7 +3261,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 2, 2025</p>
+      <p class="date">April 3, 2025</p>
     </div>
   </div>
   
@@ -3319,7 +3319,7 @@ homdiag  propto  hetar1 equalto
 <p>We specify the model as <span class="math display">\[
 y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
 \]</span></p>
-<p>where <span class="math inline">\(i\)</span> indexes studies and <span class="math inline">\(j\)</span> indexes effect sizes within study <span class="math inline">\(i\)</span>. Here, <span class="math inline">\(b_0\)</span> is the overall mean effect, <span class="math inline">\(u_i \sim N(0, \sigma^2_{u}I)\)</span> represents the among-study random effect, <span class="math inline">\(m_{ij} \sim N(0, \sigma^2_{m}I)\)</span> captures the within-study random effect (at the observation-level), and <span class="math inline">\(e_{ij} \sim N(0, \text{VCV})\)</span> are the sampling errors at the observation-level. <span class="math inline">\(\text{VCV}\)</span> represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances <span class="math inline">\(\sigma^2_{e}=vi\)</span> on the diagonal and accounts for correlations among effect sizes from the same study.</p>
+<p>where <span class="math inline">\(i\)</span> indexes studies and <span class="math inline">\(j\)</span> indexes effect sizes within study <span class="math inline">\(i\)</span>. Here, <span class="math inline">\(b_0\)</span> is the overall mean effect, <span class="math inline">\(u_i \sim N(0, \sigma^2_{u}I)\)</span> represents the among-study random effect, <span class="math inline">\(m_{ij} \sim N(0, \sigma^2_{m}I)\)</span> captures the within-study random effect (at the observation-level), and <span class="math inline">\(e_{ij} \sim N(0, \text{VCV})\)</span> are the sampling errors at the observation-level. <span class="math inline">\(\text{VCV}\)</span> represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances <span class="math inline">\(\sigma^2_{e}=v_i\)</span> on the diagonal and accounts for correlations among sampling errors from the same study.</p>
 <section id="simulate-some-data" class="level3" data-number="2.0.1">
 <h3 data-number="2.0.1" class="anchored" data-anchor-id="simulate-some-data"><span class="header-section-number">2.0.1</span> Simulate some data</h3>
 <p>Now let’s simulation data following the structure of the above multilevel meta-analysis.</p>
@@ -4230,7 +4230,7 @@ y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
 <span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a> collate  English_Australia.utf8</span>
 <span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a> ctype    English_Australia.utf8</span>
 <span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a> tz       Australia<span class="sc">/</span>Sydney</span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2025-04-02</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2025-04-03</span></span>
 <span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a> pandoc   <span class="fl">3.2</span> <span class="sc">@</span> C<span class="sc">:</span><span class="er">/</span>Program Files<span class="sc">/</span>RStudio<span class="sc">/</span>resources<span class="sc">/</span>app<span class="sc">/</span>bin<span class="sc">/</span>quarto<span class="sc">/</span>bin<span class="sc">/</span>tools<span class="sc">/</span> (via rmarkdown)</span>
 <span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>─ Packages ───────────────────────────────────────────────────────────────────</span>
@@ -4863,7 +4863,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb28-79"><a href="#cb28-79" aria-hidden="true" tabindex="-1"></a>y_{ij} = b_0 + u_i + m_{ij} + e_{ij},</span>
 <span id="cb28-80"><a href="#cb28-80" aria-hidden="true" tabindex="-1"></a>$$</span>
 <span id="cb28-81"><a href="#cb28-81" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-82"><a href="#cb28-82" aria-hidden="true" tabindex="-1"></a>where $i$ indexes studies and $j$ indexes effect sizes within study $i$. Here, $b_0$ is the overall mean effect, $u_i \sim N(0, \sigma^2_{u}I)$ represents the among-study random effect, $m_{ij} \sim N(0, \sigma^2_{m}I)$ captures the within-study random effect (at the observation-level), and $e_{ij} \sim N(0, \text{VCV})$ are the sampling errors at the observation-level. $\text{VCV}$ represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances $\sigma^2_{e}=vi$ on the diagonal and accounts for correlations among effect sizes from the same study.</span>
+<span id="cb28-82"><a href="#cb28-82" aria-hidden="true" tabindex="-1"></a>where $i$ indexes studies and $j$ indexes effect sizes within study $i$. Here, $b_0$ is the overall mean effect, $u_i \sim N(0, \sigma^2_{u}I)$ represents the among-study random effect, $m_{ij} \sim N(0, \sigma^2_{m}I)$ captures the within-study random effect (at the observation-level), and $e_{ij} \sim N(0, \text{VCV})$ are the sampling errors at the observation-level. $\text{VCV}$ represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances $\sigma^2_{e}=v_i$ on the diagonal and accounts for correlations among sampling errors from the same study.</span>
 <span id="cb28-83"><a href="#cb28-83" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-84"><a href="#cb28-84" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-85"><a href="#cb28-85" aria-hidden="true" tabindex="-1"></a><span class="fu">### Simulate some data</span></span>
