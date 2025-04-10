@@ -31,7 +31,7 @@ First, let's load the packages needed.
 library(MASS)
 library(metafor)
 library(nlme)
-library(kableExtra)
+library(kableExtra, verbose=F)
 library(insight) #to get degrees of freedom
 library(microbenchmark) #for evaluating speed of functions
 ```
@@ -399,6 +399,7 @@ A few things to note for this multilevel model :
 First let's test the speed of the simulated dataset with N=500 effect sizes across 50 studies.
 
 ```{r}
+#| label: bench.fit
 #| cache: TRUE
 
 # for propto
@@ -416,11 +417,15 @@ bench_fit <- microbenchmark(
                    dfs = "contain",
                    sparse = TRUE, ##to check if it speeds up run time
                    data=dat),                 
-  equalto = glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV), ### look into sparseX?
+  equalto = glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV), 
                     data=dat,
                     REML=T),
   propto = glmmTMB(y ~ 1 + (1|study) + propto(0 + obs|g,VCV), # expect it to be the same
                     data=dat,
+                    REML=T),
+ equalto.sparse = glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV), ### look into sparseX?
+                    data=dat,
+                    sparseX = c(cond=TRUE),
                     REML=T)
 )
 
@@ -430,6 +435,41 @@ plot(bench_fit)
 ```
 
 The glmmTMB implementations (equalto and propto) are showing a faster model run time (in seconds) compare to metafor default settings, however they are slower when metafor is used with the `sparse=TRUE` argument that speeds up matrix calculations.
+
+Let's check the profiling of the glmmTMB model for this dataset to see which parts/functions take the most time:
+
+```{r}
+# Run profiling on model fitted with an average size dataset
+Rprof(tmp <- tempfile())
+fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
+                       data=dat,
+                       REML=T)
+Rprof()
+prof <- summaryRprof(tmp)
+unlink(tmp)
+
+
+#self.time: Time spent within the function itself, excluding time spent in functions it calls.
+self_df <- as.data.frame(prof$by.self) |>
+  tibble::rownames_to_column("Function") |>
+  dplyr::arrange(desc(self.pct))
+
+#total.time: Time spent in the function including all the time in called functions.
+total_df <- as.data.frame(prof$by.total) |>
+  tibble::rownames_to_column("Function") |>
+  dplyr::arrange(desc(total.pct))
+
+# top 10 by self time
+kable(head(self_df, 10), caption = "Top 10 Functions by Self Time (%)")
+
+# top 10 by total time
+kable(head(total_df, 10), caption = "Top 10 Functions by Total Time (%)")
+```
+
+
+
+
+
 
 What happens if we increase the dataset size by 10-fold (N=5000), let's simulate a new dataframe (`dat.big`) with 200 studies.
 
@@ -492,6 +532,7 @@ dat.big <- data.frame(y = y,
 Run benchmark speed comparison again with `dat.big` for 10 runs (as it takes very long) and plot the results:
 
 ```{r}
+#| label: bench.fit.big
 #| cache: TRUE
 #| eval: TRUE
 
@@ -522,22 +563,59 @@ plot(bench_bigfit)
 
 Note: BLAS is installed on my session and seems to improve the speed performance of metafor more than glmmTMB. This results is over n=10 runs/times, there might be some variability in speed that is not captured here (I am planning to set up a simulation study to test this further).
 
+
+Let's check the profiling of the glmmTMB model for this dataset to see which parts/functions take the most time:
+
+```{r}
+#| cache: TRUE
+
+# Run profiling on model fitted with an average size dataset
+Rprof(tmp <- tempfile())
+fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
+                       data=dat.big,
+                       REML=T)
+Rprof()
+prof <- summaryRprof(tmp)
+unlink(tmp)
+
+
+#self.time: Time spent within the function itself, excluding time spent in functions it calls.
+self_df <- as.data.frame(prof$by.self) |>
+  tibble::rownames_to_column("Function") |>
+  dplyr::arrange(desc(self.pct))
+
+#total.time: Time spent in the function including all the time in called functions.
+total_df <- as.data.frame(prof$by.total) |>
+  tibble::rownames_to_column("Function") |>
+  dplyr::arrange(desc(total.pct))
+
+# top 10 by self time
+kable(head(self_df, 10), caption = "Top 10 Functions by Self Time (%)")
+
+# top 10 by total time
+kable(head(total_df, 10), caption = "Top 10 Functions by Total Time (%)")
+```
+
+
+
 # Next steps....
 
 ### Improve speed
 
-Alternative strategy for `equalto` is to use Gaussian Markov Random Field in TMB cpp that uses the inverse of the covariance matrix.
-`[density::GMRF_t](https://kaskr.github.io/adcomp/classdensity_1_1GMRF__t.html)`
+Alternative strategy for `equalto` is to use Gaussian Markov Random Field in TMB cpp that uses the inverse of the covariance matrix: 
+[density::GMRF_t](https://kaskr.github.io/adcomp/classdensity_1_1GMRF__t.html)
 
 ### Further notes
 
 Notes for potential future improvements in implementation:
+
 -   For `propto` and `equalto` do not show entire Std.Dev. and correlation matrix of the conditional model (only the `head()`?) in the summary output. When sample size is large it makes it unreadable.
 -   For `propto` and `equalto` show the random effect component (not scaled).
 
 Notes for future testing of equalto cov structure:
+
 -   Make an example of a phylogenetic multilevel meta-analysis.
--   Make an example of a meta-analysis with a non-gaussian distribution (e.g. binomial, poisson)?
+-   Make an example of a meta-analysis with a non-gaussian distribution (e.g. binomial, poisson) and compare it with `rma.glmm()` function in `metafor`. Speed here should be improved for glmmTMB. Maybe use this as a dataset: [https://www.metafor-project.org/doku.php/analyses:stijnen2010](https://www.metafor-project.org/doku.php/analyses:stijnen2010).
 
 
 # Session info
