@@ -34,6 +34,9 @@ library(nlme)
 library(kableExtra, verbose=F)
 library(insight) #to get degrees of freedom
 library(microbenchmark) #for evaluating speed of functions
+library(ape); library(MASS)
+library(brms)
+library(here)
 ```
 
 We will install `glmmTMB` using the following branch branch: <https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc>. 
@@ -597,6 +600,338 @@ kable(head(total_df, 10), caption = "Top 10 Functions by Total Time (%)")
 ```
 
 
+# More complex models
+
+
+
+## Phylogenetic meta-analysis
+
+Simulate data with phylogenetic relationships and correlated sampling errors. 
+
+```{r}
+k.studies <- 20 # number of studies
+k.species <- 50 # number of species
+k.per.study <- 5 # number of effect sizes per study
+sigma2.u <- 0.2 # between study variance
+sigma2.s <- 0.3 # within study variance
+sigma2.n <- 0.2 # species level variance
+sigma2.p <- 0.4 # phylogenetic variance
+rho <- 0.5 # within study correlation
+mu <- 0.2 # fixed effect coeff true value (i.e. the overall mean)
+
+set.seed(123)
+
+
+# simulate effect sizes for each study (same settings as Cinar et al., 2022)
+k.per.study <- round(rbeta(n = k.studies, shape1 = 1.5, shape2 = 3) * 39) + 1
+
+# set up id variables
+study <- rep(seq_len(k.studies), times=k.per.study) # study id 
+k <- length(study)                                  # total number of estimates
+id <- seq_len(k)                                    # id of between study effect sizes 
+esid <- unlist(lapply(k.per.study, seq_len))        # id of within study effect sizes
+
+
+# simulate species indices
+species <- round(rbeta(k, 2, 2) * (k.species - 1)) + 1
+species[sample(k, k.species)] <- seq_len(k.species)
+species.phylo <- species
+
+# simulate tree
+tree <- rtree(k.species, tip.label=seq_len(k.species))
+tree <- compute.brlen(tree, power = 1) # based on Cinar et al., 2022
+P <- vcv(tree, corr=TRUE)
+P <- P[order(as.numeric(rownames(P))), order(as.numeric(rownames(P)))]
+
+### simulate random effects
+u.u <- rnorm(k, 0, sqrt(sigma2.u))
+u.s <- rnorm(k.studies, 0, sqrt(sigma2.s))[study]
+u.n <- rnorm(k.species, 0, sqrt(sigma2.n))[species]
+u.p <- mvrnorm(1, mu=rep(0,k.species), Sigma=sigma2.p*P)[species]
+
+### simulate sample variance 
+vi <- rbeta(k, 2, 20)    # same settings as Cinar et al., 2022
+
+#### simulate sampling error
+#ei <- rnorm(k, 0, sqrt(vi))
+
+### set up sampling error VCV matrix for within study dependent effect sizes
+VCV <- matrix(0, nrow = k, ncol = k) 
+
+# fill in the lower off-diagonal of each study cluster with covariance between effect sizes
+for (i in 2:k) {
+  for (j in 1:i) {
+    if (study[i] == study[j]) {
+      VCV[i,j] <- rho * sqrt(vi[i] * vi[j]) 
+    }
+  }
+}
+
+# VCV is a k x k matrix with sampling variance in diagonal
+VCV[upper.tri(VCV)] <- t(VCV)[upper.tri(VCV)] # fill in upper diagonal
+diag(VCV) <- vi
+
+### simulate sampling error for dependent effect sizes
+mi <- mvrnorm(n = 1, mu = rep(0, length(vi)), Sigma = VCV)
+
+
+
+########### Get estimates  ------------------------------------------------------------------
+
+yi <- mu + u.u + u.s + u.n + u.p + mi
+
+
+# get simulated data
+dat <- data.frame(species = factor(species), species.phylo = species.phylo, ## really important that species is a factor for propto
+                  study = study,
+                  id = factor(id), ## really important that id is a factor for equalto
+                  esid = esid, yi = yi, vi = vi, 
+                  u.u = u.u, u.s = u.s, u.n = u.n, u.p = u.p,  mi = mi)
+
+dat$g <- 1 # group ID for propto and equalto
+
+
+# get V matrix based on rho.hat 
+V <- vcalc(vi, cluster=study, obs=esid, data=dat, rho=0.2)
+colnames(V) <- 1:nrow(dat)
+row.names(V) <- 1:nrow(dat)
+
+
+
+```
+
+
+Fit model using metafor:
+
+```{r}
+phylo_rma_fit <- rma.mv(yi,
+                   V,
+                   random = list(~ 1| id, ~ 1 | study, ~ 1 | species, ~ 1 | species.phylo),
+                   R = list(species.phylo=P),
+                   test = "t",
+                   dfs = "contain")
+```
+
+
+
+
+Fit model using glmmTMB:
+
+```{r}
+phylo_tmb_fit <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V) + (1|study) + (1|species) + propto(0 + species|g,P),
+                       data=dat,
+                       REML=T)
+
+
+tmb.sigmas <- unname(exp(phylo_tmb_fit$fit$par))
+
+#----- the above fitted parameters in glmmTMB model are the standard deviations on the log scale 
+### betadisp - residual sd 
+### first theta - species level sd
+### second theta - species level (non-phylogenetic) sd 
+### third theta - species level (phylogenetic) sd => it seems this is the variance??
+
+
+re_tmb <- as.data.frame(confint(phylo_tmb_fit, parm = "theta_"))
+#### why is species level sd not the same as the tmb.sigmas???
+
+```
+
+
+Compare output of metafor and glmmTMB:
+
+```{r}
+phylo_rma <- with(phylo_rma_fit,
+                  data.frame(f = "rma.mv", 
+                        logLik = logLik(phylo_rma_fit),
+                        df = attr(logLik(phylo_rma_fit), "df"), 
+                        est = as.numeric(b), 
+                        se = se, 
+                        sigma.u = sqrt(sigma2[1]), 
+                        sigma.s = sqrt(sigma2[2]),
+                        sigma.n = sqrt(sigma2[3]),
+                        sigma.p = sqrt(sigma2[4])
+                        ))
+
+
+phylo_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(phylo_tmb_fit )[1],
+                        df = attr(logLik(phylo_tmb_fit), "df"), 
+                        est = as.numeric(unlist(fixef(phylo_tmb_fit))[[1]]), 
+                        se = as.numeric(sqrt(vcov(phylo_tmb_fit)[[1]])), 
+                        sigma.u = sigma(phylo_tmb_fit), # also equal to tmb.sigmas[1] i.e. residual sd
+                        sigma.s = re_tmb$Estimate[1],
+                        sigma.n = re_tmb$Estimate[2],
+                        sigma.p = re_tmb$Estimate[3] # same as tmb.sigmas[4]^2 
+                        )
+  
+  
+kable(rbind(phylo_rma, phylo_tmb))
+
+
+```
+
+
+Pretty cool to see that the estimates are almost identical across the two models. The only difference is the standard error of the fixed effect estimate (i.e. the overall mean) which is slightly different and the log-likelihood again.
+
+
+
+## Location-scale meta-analysis
+
+Location-scale meta-regression models allow for heteroscedasticity in the sampling errors:
+-   more flexible
+-   can be used to model the variance of the sampling errors as a function of covariates (e.g. study-level covariates)
+-   location and scale variables can be different
+
+
+Replicate Example 2 from Nakagawa et al., 2025 that uses data from the following paper: 
+
+> Midolo, G.
+> et al. (2019).
+> Global patterns of intraspecific leaf trait responses to elevation.
+> Global Change Biology, 25(7), 2485–2498.
+
+
+```{r}
+# load
+dat <- read.csv(here("data", "elevation.csv"))
+# calculate es
+# filter data Narea
+dat <- dat[which(dat$trait == "Narea"),]
+
+dat$study_ID <- as.factor(dat$Study_ID)
+dat$es_ID <- as.factor(1:nrow(dat))
+
+# using escalc use ROM
+
+dat <- escalc(measure = "ROM",
+              m1i = treatment,
+              m2i = control,
+              sd1i = sd_treatment,
+              sd2i = sd_control,
+              n1i = n_treatment,
+              n2i = n_control,
+              data = dat)
+
+
+# rename for the consistency
+dat$study_ID <- as.factor(dat$Study_ID)
+dat$es_ID <- as.factor(1:nrow(dat))
+
+# selecte varaibles we need
+dat <- dat |> 
+  dplyr::select(yi, vi, es_ID, study_ID, elevation_log)
+str(dat)
+```
+
+
+
+First, need to construct a VCV matrix for sampling errors:
+
+```{r}
+vcv <- diag(dat$vi)
+rownames(vcv) <- dat$es_ID
+colnames(vcv) <- dat$es_ID
+```
+
+
+Here is the results of the `brms` model used in Nakagawa et al. 2025 that (1) use `bf()` from `brms` to build models for location and scale part, (2) specify weakly informative (default) priors, and (3) fit the model to get MCMC:
+
+```{r}
+#| eval: false
+#| cache: true
+
+brms_mals <- bf(yi
+             ~ 1   +
+               (1|p|study_ID) + # this is u
+               (1|gr(es_ID, cov = vcv)), # this is m
+             sigma ~ 1 + (1|p|study_ID)
+)
+
+
+
+prior <- default_prior(brms_mals,
+                         data = dat,
+                         data2 = list(vcv = vcv),
+                         family = gaussian()
+)
+
+#fixing the varaince to 1 (meta-analysis)
+prior$prior[5] = "constant(1)"
+prior
+
+# fit model
+fit_brms_mals <- brm(brms_mals,
+             data = dat,
+             data2 = list(vcv = vcv),
+             chains = 2,
+             cores = 2,
+             iter = 6000,
+             warmup = 3000,
+             prior = prior,
+             control = list(adapt_delta = 0.95, max_treedepth = 15)
+)
+
+
+```
+
+Load results. 
+
+The results show that there is a non-zero variance (heteroscedasticity), suggesting the location-scale meta-regression is preferred over a regular meta-regression:
+
+```{r}
+#| warning: false
+#| echo: true
+fit_ma2 <- readRDS(here("Rdata", "fit_ma2.rds"))
+summary(fit_ma2)
+```
+
+
+
+With metafor, random effects location-scale model:
+
+```{r}
+
+```
+
+
+
+
+
+
+Now we can fit the model using `glmmTMB` with the `equalto` covariance structure. The model is specified with a random intercept for each study and a random slope for elevation. 
+
+
+```{r}
+
+TMB_mals <- glmmTMB(yi ~ 1 + (1|study_ID) + equalto(0 + es_ID|g, vcv),
+              data = dat,
+              REML = TRUE,
+              dispformula = ~ 1 + (1|study_ID),
+              disp = TRUE)
+
+
+
+### can we get profiling likelihood for glmmTMB?
+
+
+
+
+```
+
+
+
+## Non-Gaussian meta-analysis
+
+
+### Binomial
+
+
+
+### Poisson
+
+
+
 
 # Next steps....
 
@@ -612,10 +947,15 @@ Notes for potential future improvements in implementation:
 -   For `propto` and `equalto` do not show entire Std.Dev. and correlation matrix of the conditional model (only the `head()`?) in the summary output. When sample size is large it makes it unreadable.
 -   For `propto` and `equalto` show the random effect component (not scaled).
 
-Notes for future testing of equalto cov structure:
+Notes for future testing of `equalto` cov structure:
 
 -   Make an example of a phylogenetic multilevel meta-analysis.
 -   Make an example of a meta-analysis with a non-gaussian distribution (e.g. binomial, poisson) and compare it with `rma.glmm()` function in `metafor`. Speed here should be improved for glmmTMB. Maybe use this as a dataset: [https://www.metafor-project.org/doku.php/analyses:stijnen2010](https://www.metafor-project.org/doku.php/analyses:stijnen2010).
+
+
+# References
+
+
 
 
 # Session info
