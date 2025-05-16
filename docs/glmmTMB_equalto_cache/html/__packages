@@ -8,3 +8,7 @@ kableExtra
 insight
 microbenchmark
 glmmTMB
+ape
+Rcpp
+brms
+here

@@ -207,6 +207,8 @@ Here we will fit two types of models and compare results across different R pack
 
 ## Basic random effect
 
+Using BCG vaccine data from `metafor` package:
+
 ```{r}
 bcg_example <- function(method = "REML", constant_var = FALSE) {
   
@@ -218,6 +220,8 @@ bcg_example <- function(method = "REML", constant_var = FALSE) {
   v_bar <- mean(dat$vi)
   if (constant_var) dat$vi <- v_bar
   
+  
+  
   # random-effects model using rma.uni()
   LOR_uni_fit <- rma(yi, vi, data=dat, method = method)
   LOR_uni <- with(LOR_uni_fit, 
@@ -228,6 +232,8 @@ bcg_example <- function(method = "REML", constant_var = FALSE) {
                              se = se, 
                              tau = sqrt(tau2)))
   
+  
+  
   # random-effects model using rma.mv()
   LOR_mv_fit <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, method = method)
   LOR_mv <- with(LOR_mv_fit, 
@@ -237,6 +243,7 @@ bcg_example <- function(method = "REML", constant_var = FALSE) {
                             est = as.numeric(b), 
                             se = se, 
                             tau = sqrt(sigma2)))
+  
   
   # random-effects model using lme()
   if (constant_var) {
@@ -283,6 +290,7 @@ bcg_example <- function(method = "REML", constant_var = FALSE) {
                         tau = tau)
   
   
+  ## compare models
   kable(rbind(LOR_uni, LOR_mv, LOR_glmm, LOR_lme))
   
 }
@@ -299,6 +307,8 @@ Here we see that glmmTMB is almost identical to `metafor` (assumed to be the sta
 
 -   The log likelihood is different for glmmTMB when using `REML` (but it is the same as metafor when using`ML`).
 -   The standard error is different for glmmTMB to the fourth decimal point when the variance is not constant (`constant_var=FALSE`), but exactly the same when the variance is constant (`constant_var=TRUE`). 
+
+
 
 
 
@@ -821,7 +831,6 @@ dat$es_ID <- as.factor(1:nrow(dat))
 # selecte varaibles we need
 dat <- dat |> 
   dplyr::select(yi, vi, es_ID, study_ID, elevation_log)
-str(dat)
 ```
 
 
@@ -856,9 +865,8 @@ prior <- default_prior(brms_mals,
                          family = gaussian()
 )
 
-#fixing the varaince to 1 (meta-analysis)
+#fixing the variance to 1 (meta-analysis)
 prior$prior[5] = "constant(1)"
-prior
 
 # fit model
 fit_brms_mals <- brm(brms_mals,
@@ -872,30 +880,25 @@ fit_brms_mals <- brm(brms_mals,
              control = list(adapt_delta = 0.95, max_treedepth = 15)
 )
 
+saveRDS(fit_brms_mals, file = here("data", "brms_mals.rds"))
 
 ```
 
-Load results. 
 
 The results show that there is a non-zero variance (heteroscedasticity), suggesting the location-scale meta-regression is preferred over a regular meta-regression:
 
+
 ```{r}
-#| warning: false
-#| echo: true
-fit_ma2 <- readRDS(here("Rdata", "fit_ma2.rds"))
-summary(fit_ma2)
+
+readRDS(here("data", "brms_mals.rds")) # load brms model
+summary(fit_brms_mals)
+
 ```
+
 
 
 
 With metafor, random effects location-scale model:
-
-```{r}
-
-```
-
-
-
 
 
 
@@ -904,11 +907,11 @@ Now we can fit the model using `glmmTMB` with the `equalto` covariance structure
 
 ```{r}
 
-TMB_mals <- glmmTMB(yi ~ 1 + (1|study_ID) + equalto(0 + es_ID|g, vcv),
-              data = dat,
-              REML = TRUE,
-              dispformula = ~ 1 + (1|study_ID),
-              disp = TRUE)
+# TMB_mals <- glmmTMB(yi ~ 1 + (1|study_ID) + equalto(0 + es_ID|g, vcv),
+#               data = dat,
+#               REML = TRUE,
+#               dispformula = ~ 1 + (1|study_ID),
+#               disp = TRUE)
 
 
 
