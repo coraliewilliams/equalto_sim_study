@@ -67,7 +67,7 @@ library(glmmTMB)
 
 <!-- Yes? Great - let's move on to fitting some meta-analytical models.  -->
 
-# Multilevel meta-analysis
+# First test: multilevel meta-analysis 
 
 We are interested in fitting a multilevel meta-analysis model that synthesises effect sizes across studies by accounting for variability at the study level, at the observation (effect size) level, and by modelling correlated within-study residual errors.
 
@@ -199,11 +199,20 @@ The overall mean estimate and random effect variance estimates are identical acr
 
 
 
-# Comparison of `glmmTMB` with `metafor` and `nlme` R packages (using code from [this blog post](https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/))
+# Comparison of three R packages
 
-Let's compare the model estimates across two other packages. The following code has been taken from the post by J.E.Pustejovsky.
+Let's compare the model estimates of `glmmTMB` across two other R packages: `metafor` and `nlme`.
 
-Here we will fit two types of models and compare results across different R packages: a basic random effect model and a three-level random effect model using `metafor`, `nlme`, and `glmmTMB`. We will store the model estimates, standard errors, degrees of freedom and log-likelihoods in a data frame for comparison. We also store $\tau$ which is the estimated standard deviation of the underlying true effect sizes across studies (also called the between-study heterogeneity).
+The following code has been taken from [this blog post](https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/) by J.E.Pustejovsky.
+
+We will fit three types of models and compare results across different R packages: 
+
+-   a basic random effect model
+-   a bivariate random effect model 
+-   a three-level random effect model 
+
+We will store the model estimates, standard errors, degrees of freedom and log-likelihoods in a data frame for comparison. We also store $\tau$ which is the estimated standard deviation of the underlying true effect sizes across studies (also called the between-study heterogeneity).
+
 
 ## Basic random effect
 
@@ -309,6 +318,133 @@ Here we see that glmmTMB is almost identical to `metafor` (assumed to be the sta
 -   The standard error is different for glmmTMB to the fourth decimal point when the variance is not constant (`constant_var=FALSE`), but exactly the same when the variance is constant (`constant_var=TRUE`). 
 
 
+## Bivariate random effect model
+
+
+
+```{r}
+bcg_bivariate <- function(method = "REML", constant_var = FALSE) {
+  
+  data(dat.bcg)
+  dat_long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+  levels(dat_long$group) <- c("exp", "con")
+  dat_long$group <- relevel(dat_long$group, ref="con")
+  dat_long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat_long)
+  dat_long$obs <- as.factor(1:nrow(dat_long))
+  dat_long$g <- 1
+  
+  v_bar <- mean(dat_long$vi)
+  
+  if (constant_var) dat_long$vi <- v_bar
+  
+  
+  
+  # bivariate random-effects model using rma.mv()
+  bv_rma_fit <- rma.mv(yi, vi, mods = ~ group, 
+                       random = ~ group | study, 
+                       struct = "UN",
+                       method = method,
+                       data=dat_long)
+  bv_rma <- with(bv_rma_fit, data.frame(f = "rma.mv",
+                                        logLik = logLik(bv_rma_fit),
+                                        df = attr(logLik(bv_rma_fit), "df"),
+                                        est.b0 = as.numeric(b[1]),
+                                        se.b0 = se[1],
+                                        est.b1 = as.numeric(b[2]),
+                                        se.b1 = se[2],
+                                        tau1 = sqrt(tau2[1]),
+                                        tau2 = sqrt(tau2[2]),
+                                        rho = rho
+                                        )
+                 )
+  
+  
+  # bivariate random-effects model using lme()
+  if (constant_var) {
+    bv_lme_fit <- lme(yi ~ group, data = dat_long, method = method, 
+                      random = ~ 0 + group | study,
+                      control = lmeControl(sigma = sqrt(v_bar))) #set residual variance to v_bar
+    tau <- sqrt(as.numeric(coef(bv_lme_fit$modelStruct$reStruct, unconstrained = FALSE)) * v_bar)
+    rho.lme <-  tau[2]^2 / (tau[1] * tau[3]) # obtain correlation between group.con and group.exp based on covariance and std deviations for each group
+    
+    
+  } else {
+    bv_lme_fit <- lme(yi ~ group, data = dat_long, method = method, 
+                      random = ~ 0 + group | study,
+                      weights = varFixed(~ vi),
+                      control = lmeControl(sigma = 1)) 
+    
+    tau <- sqrt(as.numeric(coef(bv_lme_fit$modelStruct$reStruct, unconstrained = FALSE)))
+    rho.lme <-  tau[2]^2 / (tau[1] * tau[3]) # obtain correlation between group.con and group.exp based on covariance and std deviations for each group
+    
+  }
+  
+  bv_lme <- data.frame(f = "lme",
+                       logLik = logLik(bv_lme_fit),
+                       df = attr(logLik(bv_lme_fit), "df"),
+                       est.b0 = bv_lme_fit$coefficients$fixed[[1]],
+                       se.b0 = as.numeric(sqrt(vcov(bv_lme_fit)[[1]])),
+                       est.b1 = bv_lme_fit$coefficients$fixed[[2]],
+                       se.b1 = as.numeric(sqrt(vcov(bv_lme_fit)[[4]])),
+                       tau1 = tau[1],
+                       tau2 = tau[3], ## note that tau[2] is the sqrt(covariance) between group.control and group.exp
+                       rho = rho.lme
+  )
+  
+  # bivariate random-effects model using glmmTMB() and equalto
+  if (method=="REML") REML <- TRUE else REML <- FALSE
+  
+  if (constant_var) {
+    VCV <- diag(v_bar, nrow = nrow(dat_long))
+    bv_glmm_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
+                            dispformula = ~ 0,
+                            REML = REML,
+                            data=dat_long)
+    vc <- VarCorr(bv_glmm_fit)
+    var_con <- vc$cond$study["groupcon", "groupcon"]
+    var_exp <- vc$cond$study["groupexp", "groupexp"]
+    rho.tmb <- vc$cond$study["groupcon", "groupexp"] / sqrt(var_con * var_exp)
+
+  } else {
+    VCV <- diag(dat_long$vi)
+    bv_glmm_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
+                            dispformula = ~ 0, # set residual variance to zero
+                            REML = REML,
+                            data=dat_long)
+    
+    vc <- VarCorr(bv_glmm_fit) ## alternative to using: exp(bv_glmm_fit$fit$par) or confint(bv_glmm_fit, parm="theta_")
+    var_con <- vc$cond$study["groupcon", "groupcon"]
+    var_exp <- vc$cond$study["groupexp", "groupexp"]
+    rho.tmb <- vc$cond$study["groupcon", "groupexp"] / sqrt(var_con * var_exp)
+  }
+  bv_glmm <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(bv_glmm_fit)[1],
+                        df = attr(logLik(bv_glmm_fit), "df"),                         
+                        est.b0 = as.numeric(unlist(fixef(bv_glmm_fit))[[1]]), 
+                        se.b0 = as.numeric(sqrt(vcov(bv_glmm_fit)[[1]]))[1], 
+                        est.b1 = as.numeric(unlist(fixef(bv_glmm_fit))[[2]]), 
+                        se.b1 = as.numeric(sqrt(vcov(bv_glmm_fit)[[1]]))[4], 
+                        tau1 = sqrt(var_con), # study-level heterogeneity in effect size for group=control
+                        tau2 = sqrt(var_exp), # study-level heterogeneity in effect size for group=exp
+                        rho = rho.tmb
+  )
+
+  
+    ## compare models
+  kable(rbind(bv_rma, bv_glmm, bv_lme))
+}
+
+bcg_bivariate("REML", constant_var = FALSE)
+bcg_bivariate("REML", constant_var = TRUE)
+bcg_bivariate("ML", constant_var = FALSE)
+bcg_bivariate("ML", constant_var = TRUE)
+
+```
+
+
+Results are (pretty much) identical between `glmmTMB` and `metafor`. `nlme` package shows discrepancies when REML is used. 
+
+
 
 
 
@@ -325,6 +461,7 @@ Konstantopoulos <- function(method = "REML", constant_var = FALSE) {
   
   # multilevel random-effects model using rma.mv()
   ml_rma_fit <- rma.mv(yi, vi, random = ~ 1 | district/school, data=dat, method = method)
+  ## note that 1|district/school is not equivalent to 1|district + 1|school here as school is not unique
   
   ml_rma <- with(ml_rma_fit, 
                  data.frame(f = "rma.mv", 
@@ -613,8 +750,9 @@ kable(head(total_df, 10), caption = "Top 10 Functions by Total Time (%)")
 # More complex models
 
 
+## Phylogenetic meta-analysis 
 
-## Phylogenetic meta-analysis
+### Repeated measures
 
 Simulate data with phylogenetic relationships and correlated sampling errors. 
 
@@ -785,6 +923,21 @@ kable(rbind(phylo_rma, phylo_tmb))
 Pretty cool to see that the estimates are almost identical across the two models. The only difference is the standard error of the fixed effect estimate (i.e. the overall mean) which is slightly different and the log-likelihood again.
 
 
+### Multivariate phylogenetic meta-analysis
+
+Simulate data some data. 
+
+```{r}
+# set up indices
+set.seed(123)
+
+
+
+```
+
+
+
+
 
 ## Location-scale meta-analysis
 
@@ -803,6 +956,11 @@ Replicate Example 2 from Nakagawa et al., 2025 that uses data from the following
 
 
 ```{r}
+#| echo: false
+#| warning: false
+
+
+
 # load
 dat <- read.csv(here("data", "elevation.csv"))
 # calculate es
@@ -838,6 +996,9 @@ dat <- dat |>
 First, need to construct a VCV matrix for sampling errors:
 
 ```{r}
+#| echo: false
+#| warning: false
+
 vcv <- diag(dat$vi)
 rownames(vcv) <- dat$es_ID
 colnames(vcv) <- dat$es_ID
@@ -848,10 +1009,10 @@ Here is the results of the `brms` model used in Nakagawa et al. 2025 that (1) us
 
 ```{r}
 #| eval: false
-#| cache: true
+#| cache: false
 
 brms_mals <- bf(yi
-             ~ 1   +
+             ~ 1  +
                (1|p|study_ID) + # this is u
                (1|gr(es_ID, cov = vcv)), # this is m
              sigma ~ 1 + (1|p|study_ID)
@@ -889,9 +1050,11 @@ The results show that there is a non-zero variance (heteroscedasticity), suggest
 
 
 ```{r}
+#| echo: false
+#| warning: false
 
-readRDS(here("data", "brms_mals.rds")) # load brms model
-summary(fit_brms_mals)
+#readRDS(here("data", "brms_mals.rds")) # load brms model
+#summary(fit_brms_mals)
 
 ```
 
@@ -900,25 +1063,48 @@ summary(fit_brms_mals)
 
 With metafor, random effects location-scale model:
 
+```{r}
+#| echo: false
+#| warning: false
+
+fit_rma_mals <- rma.mv(yi, vi,
+                   random = list(~ 1 | study_ID, ~ 1 | es_ID),
+                   data = dat,
+                   R = list(es_ID = vcv),
+                   test = "t",
+                   dfs = "contain",
+                   method = "REML")
+
+
+```
+
+
+
 
 
 Now we can fit the model using `glmmTMB` with the `equalto` covariance structure. The model is specified with a random intercept for each study and a random slope for elevation. 
 
 
 ```{r}
+#| echo: false
+#| warning: false
 
-# TMB_mals <- glmmTMB(yi ~ 1 + (1|study_ID) + equalto(0 + es_ID|g, vcv),
-#               data = dat,
-#               REML = TRUE,
-#               dispformula = ~ 1 + (1|study_ID),
-#               disp = TRUE)
+# data grouping factor
+dat$g <- 1
+
+# fit glmmTMB location-scale meta-analysis
+fit_tmb_mals <- glmmTMB(yi ~ 1 + (1|study_ID) + equalto(0 + es_ID|g, vcv),
+              data = dat,
+              REML = TRUE,
+              dispformula = ~ 1 + (1|study_ID))
 
 
+# get random effect estimates
+ref_tmb_mals <- as.data.frame(confint(fit_tmb_mals))
 
-### can we get profiling likelihood for glmmTMB?
 
-
-
+# get profile likelihood ====> not possible for REML models at the moment
+#profile(fit_tmb_mals)
 
 ```
 
