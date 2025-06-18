@@ -935,20 +935,73 @@ ref_tmb_mals <- as.data.frame(confint(fit_tmb_mals))
 
 # Speed comparison
 
-First let's test the speed of the simulated dataset with N=500 effect sizes across 50 studies.
+First let's test the speed of the simulated dataset with N=500 effect sizes across 50 studies (same simulated dataset as section "First Test").
 
 ```{r}
 #| label: bench.fit
 #| cache: TRUE
-#| eval: FALSE
-#| echo: FALSE
+#| eval: TRUE
+#| echo: TRUE
 #| warning: FALSE
 
-# for propto
+# set up indices
+set.seed(123)
+k.studies <- 50 # number of studies
+k.per.study <- 10 # number of effect sizes per study
+study <- rep(seq_len(k.studies), times=k.per.study) # study id 
+k <- length(study) # total number of effect sizes
+id <- seq_len(k) # id of between study effect sizes 
+es.id <- unlist(lapply(k.per.study, seq_len)) # id of within study effect sizes
+
+
+# fixed effect coeff true value (i.e. the overall mean)
+b0 <- 0
+
+# simulate sampling errors variances
+vi <- rbeta(k, 2, 20)
+
+# get VCV matrix assuming within-study correlation of rho=0.5 
+V <- matrix(0, nrow = k, ncol = k) 
+for (i in 2:k) {
+  for (j in 1:i) {
+    if (study[i] == study[j]) {
+      V[i,j] <- 0.5 * sqrt(vi[i] * vi[j]) 
+    }
+  }
+}
+V[upper.tri(V)] <- t(V)[upper.tri(V)] # fill in upper diagonal
+diag(V) <- vi # fill in diagonal
+
+
+# random effects
+sigma2.u <- 0.2
+sigma2.m <- 0.3
+u <- rnorm(k.studies, 0, sqrt(sigma2.u))[study]
+m <- rnorm(k, 0, sqrt(sigma2.m))
+#e <- rnorm(k, 0, sqrt(vi))[study] #without within-study correlation (diag VCV)
+e <- mvrnorm(n = 1, mu = rep(0, length(vi)), Sigma = V) 
+
+
+# compute y
+y <- b0 + u + m + e
+
+# combine into dataframe
+dat <- data.frame(y = y,
+                  vi = vi,
+                  study = study,
+                  id = id,
+                  es.id = es.id,
+                  obs = as.factor(id), #unique ID for propto and equalto (really important it is a factor variable)
+                  g = 1 #group ID for propto and equalto (a constant here)
+)
+
+# obtain assumed VCV matrix for model 
+VCV <- vcalc(vi, cluster=study, obs=obs, data=dat, rho=0.5)
 colnames(VCV) <- 1:nrow(dat)
 row.names(VCV) <- 1:nrow(dat)
 
-# using the data from the second simulation - this runs 100 times by default
+
+# Run benchfit on dataset
 bench_fit <- microbenchmark(
   metafor = rma.mv(y, VCV, random = list(~1 | study, ~1 | id), 
                    test = "t",
@@ -981,8 +1034,8 @@ The glmmTMB implementations (equalto and propto) are showing a faster model run 
 Let's check the profiling of the glmmTMB model for this dataset to see which parts/functions take the most time:
 
 ```{r}
-#| eval: FALSE
-#| echo: FALSE
+#| eval: TRUE
+#| echo: TRUE
 #| warning: FALSE
 
 # Run profiling on model fitted with an average size dataset
@@ -1021,8 +1074,8 @@ What happens if we increase the dataset size by 10-fold (N=5000), let's simulate
 
 ```{r}
 #| cache: TRUE
-#| eval: FALSE
-#| echo: FALSE
+#| eval: TRUE
+#| echo: TRUE
 #| warning: FALSE
 
 # set up indices
@@ -1083,7 +1136,7 @@ Run benchmark speed comparison again with `dat.big` for 10 runs (as it takes ver
 ```{r}
 #| label: bench.fit.big
 #| cache: TRUE
-#| eval: FALSE
+#| eval: TRUE
 
 # for propto
 colnames(VCV) <- 1:nrow(dat.big)
@@ -1117,8 +1170,8 @@ Let's check the profiling of the glmmTMB model for this dataset to see which par
 
 ```{r}
 #| cache: TRUE
-#| eval: FALSE
-#| echo: FALSE
+#| eval: TRUE
+#| echo: TRUE
 #| warning: FALSE
 
 # Run profiling on model fitted with an average size dataset
@@ -1147,8 +1200,6 @@ kable(head(self_df, 10), caption = "Top 10 Functions by Self Time (%)")
 # top 10 by total time
 kable(head(total_df, 10), caption = "Top 10 Functions by Total Time (%)")
 ```
-
-
 
 
 
