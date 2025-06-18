@@ -1227,6 +1227,11 @@ Notes for future testing of `equalto` cov structure:
 
 # References
 
+Viechtbauer, W. (2023). Metafor: Meta-Analysis Package for R. https://cran.r-project.org/web/packages/metafor/index.html
+
+
+Brooks , M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Maechler, M., Bolker, B. M., & Brooks, M. E. (2017). glmmTMB Balances Speed and Flexibility Among Packages for Zero-Inflated Generalized Linear Mixed Modeling. The R Journal, 9(2), 378–400. https://doi.org/10.32614/RJ-2017-066
+
 
 
 
