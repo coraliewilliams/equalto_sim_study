@@ -19,7 +19,7 @@ editor_options:
 
 # Overview
 
-This webpage describes the `equalto` covariance structure within the `glmmTMB` package to fit a wide range of meta-analytical models.
+This webpage describes the `equalto` covariance structure within the `glmmTMB` package to fit meta-analytical models.
 
 First, let's load the packages needed.
 
@@ -39,7 +39,7 @@ library(brms)
 library(here)
 ```
 
-We will install `glmmTMB` using the following branch branch: <https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc>. 
+We will install `glmmTMB` using the following branch: <https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc>. 
 <!-- (If you have `glmmTMB` already installed, remove this version and reload R afterwards with this shortcut: Ctrl+Shift+F10) -->
 
 ```{r}
@@ -54,7 +54,7 @@ remove.packages("glmmTMB")
 remotes::install_github("coraliewilliams/glmmTMB", ref="equalto_covstruc", subdir="glmmTMB")
 ```
 
-Check if `equalto` is there:
+Check if `equalto` covariance structure is there:
 
 ```{r}
 # load it
@@ -69,7 +69,7 @@ library(glmmTMB)
 
 # First test
 
-We are interested in fitting a multilevel meta-analysis model that synthesises effect sizes across studies by accounting for variability at the study level, at the observation (effect size) level, and by modelling correlated within-study residual errors.
+For the first test we are interested in fitting a multilevel meta-analysis model that synthesises effect sizes across studies by accounting for variability at the study level, at the observation (effect size) level, and by modelling correlated within-study residual errors.
 
 We specify the model as 
 $$
@@ -81,7 +81,7 @@ where $i$ indexes studies and $j$ indexes effect sizes within study $i$. Here, $
 
 ### Simulate some data
 
-Now let's simulation data following the structure of the above multilevel meta-analysis.
+Now let's simulate data following the structure of the above multilevel meta-analysis.
 
 ```{r}
 # set up indices
@@ -195,23 +195,21 @@ kable(output)
 
 ```
 
-The overall mean estimate and random effect variance estimates are identical across the two packages :-D To note though: the standard errors differ to the fourth decimal point (and hence also the z-value and p-value), as well as the log-likelihoods and residual degrees of freedom (which is expected?).
+The overall mean estimate and random effect variance estimates are identical across the two packages. To note though: the standard errors differ to the fourth decimal point (and hence also the z-value and p-value), as well as the log-likelihoods and residual degrees of freedom (which is expected? => see notes in glmmTMB about df).
 
 
 
 # Comparison of three R packages
 
-Let's compare the model estimates of `glmmTMB` across two other R packages: `metafor` and `nlme`.
+Let's compare the model estimates of `glmmTMB` across two other R packages: `metafor` and `nlme`. We use code has from [this blog post](https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/) by J.E.Pustejovsky.
 
-The following code has been taken from [this blog post](https://jepusto.com/posts/Bug-in-nlme-with-fixed-sigma/) by J.E.Pustejovsky.
-
-We will fit three types of models and compare results across different R packages: 
+We will fit three types of models: 
 
 -   a basic random effect model
 -   a bivariate random effect model 
 -   a three-level random effect model 
 
-We will store the model estimates, standard errors, degrees of freedom and log-likelihoods in a data frame for comparison. We also store $\tau$ which is the estimated standard deviation of the underlying true effect sizes across studies (also called the between-study heterogeneity).
+We will store the model estimates, standard errors, degrees of freedom and log-likelihoods of the models fitted to three R packages. We also store the estimated standard deviation of the underlying true effect sizes across studies, $\tau$ (also called the between-study heterogeneity).
 
 
 ## Basic random effect
@@ -442,7 +440,7 @@ bcg_bivariate("ML", constant_var = TRUE)
 ```
 
 
-Results are (pretty much) identical between `glmmTMB` and `metafor`. `nlme` package shows discrepancies when REML is used. 
+Results are (pretty much) identical between `glmmTMB` and `metafor`. `nlme` package shows discrepancies when REML is used (as detailed in the blog post this code is based on). 
 
 
 
@@ -715,12 +713,12 @@ kable(rbind(phylo_rma, phylo_tmb))
 ```
 
 
-Pretty cool to see that the estimates are almost identical across the two models. The only difference is the standard error of the fixed effect estimate (i.e. the overall mean) which is slightly different and the log-likelihood again.
+Nice to see that the estimates are almost identical across the two models! The only difference is the standard error of the fixed effect estimate (i.e. the overall mean) which is slightly different and the log-likelihood again.
 
 
 ### Multivariate phylogenetic meta-analysis
 
-Simulate data some data. 
+(TO BE FINISHED)
 
 ```{r}
 #| echo: false
@@ -748,7 +746,7 @@ set.seed(123)
 
 
 
-## Location-scale meta-analysis
+## Location-scale meta-analysis (TBD/incomplete)
 
 Location-scale meta-regression models allow for heteroscedasticity in the sampling errors:
 -   more flexible
@@ -919,7 +917,7 @@ ref_tmb_mals <- as.data.frame(confint(fit_tmb_mals))
 
 
 
-## Non-Gaussian meta-analysis
+## Non-Gaussian meta-analysis (TBD/incomplete)
 
 
 ### Binomial
@@ -927,8 +925,6 @@ ref_tmb_mals <- as.data.frame(confint(fit_tmb_mals))
 
 
 ### Poisson
-
-
 
 
 
@@ -1221,7 +1217,6 @@ Notes for potential future improvements in implementation:
 
 Notes for future testing of `equalto` cov structure:
 
--   Make an example of a phylogenetic multilevel meta-analysis.
 -   Make an example of a meta-analysis with a non-gaussian distribution (e.g. binomial, poisson) and compare it with `rma.glmm()` function in `metafor`. Speed here should be improved for glmmTMB. Maybe use this as a dataset: [https://www.metafor-project.org/doku.php/analyses:stijnen2010](https://www.metafor-project.org/doku.php/analyses:stijnen2010).
 
 
