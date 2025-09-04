@@ -144,7 +144,7 @@ Extract model estimates:
 
 ```{r, echo=FALSE}
 # metafor output
-m1.smd_rma <- data.frame(f = "rma.uni", 
+res.smd_rma <- data.frame(f = "rma.uni", 
                         logLik = logLik(m.smd.rma)[1],
                         df = attr(logLik(m.smd.rma), "df"), 
                         est = as.numeric(m.smd.rma$b), 
@@ -155,7 +155,7 @@ m1.smd_rma <- data.frame(f = "rma.uni",
 
 # glmmTMB output 
 fix.tmb <- as.data.frame(summary(m.smd.tmb)$coefficients$cond)
-m1.smd_tmb <- data.frame(f = "glmmTMB", 
+res.smd_tmb <- data.frame(f = "glmmTMB", 
                         logLik = logLik(m.smd.tmb)[1],
                         df = attr(logLik(m.smd.tmb), "df"), 
                         est = fix.tmb$Estimate, 
@@ -164,7 +164,7 @@ m1.smd_tmb <- data.frame(f = "glmmTMB",
                         tau2 = sigma(m.smd.tmb)^2
                         )
   
-kable(rbind(m1.smd_rma, m1.smd_tmb))
+kable(rbind(res.smd_rma, res.smd_tmb))
 ```
 
 
@@ -198,7 +198,7 @@ Extract model estimates:
 
 ```{r}
 # metafor output
-m1.lnrr_rma <- data.frame(f = "rma.uni", 
+res.lnrr_rma <- data.frame(f = "rma.uni", 
                         logLik = logLik(m.lnrr.rma)[1],
                         df = attr(logLik(m.lnrr.rma), "df"), 
                         est = as.numeric(m.lnrr.rma$b), 
@@ -209,7 +209,7 @@ m1.lnrr_rma <- data.frame(f = "rma.uni",
 
 # glmmTMB output 
 fix.tmb <- as.data.frame(summary(m.lnrr.tmb)$coefficients$cond)
-m1.lnrr_tmb <- data.frame(f = "glmmTMB", 
+res.lnrr_tmb <- data.frame(f = "glmmTMB", 
                         logLik = logLik(m.lnrr.tmb)[1],
                         df = attr(logLik(m.lnrr.tmb), "df"), 
                         est = fix.tmb$Estimate, 
@@ -218,7 +218,7 @@ m1.lnrr_tmb <- data.frame(f = "glmmTMB",
                         tau2 = sigma(m.lnrr.tmb)^2
                         )
   
-kable(rbind(m1.lnrr_rma, m1.lnrr_tmb))
+kable(rbind(res.lnrr_rma, res.lnrr_tmb))
 ```
 
 
@@ -232,27 +232,25 @@ Set up simulated dataset:
 load(here("data", "dat_OR.RDATA"))
 dat.or <- out_or
 
-# set up long data format
-n <- c(dat.or$a+dat.or$b, dat.or$c+dat.or$d)
-event <- c(dat.or$a, dat.or$c)
-study <- rep(1:nrow(dat.or), each=2)
-obs <- 1:length(n)
-treat <- c(rep(1, nrow(dat.or)), rep(0, nrow(dat.or)))
-control <- 1 - treat
-treat12 <- treat - 0.5
-dat.or_long <- data.frame(study, obs, n, event, treat, control, treat12)
-
 ```
 
 ### Normal-Normal model
 
-Fit random effects meta-analysis with metafor and glmmTMB:
+Fit random effects meta-analysis with metafor:
 
 ```{r}
 # fit metafor model
-m.or.rma <- rma(yi, vi, data=dat.or)
+m.or.rma <- rma(yi,
+                vi,
+                method="REML",
+                data=dat.or)
+
+```
 
 
+Fit model in glmmTMB:
+
+```{r}
 # fit glmmTMB model
 dat.or$g <- 1
 dat.or$id <- as.factor(1:nrow(dat.or))
@@ -261,12 +259,15 @@ V <- diag(dat.or$vi, nrow = nrow(dat.or))
 m.or.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
                     REML = TRUE,
                     data=dat.or)
+
 ```
+
+
 
 Extract model estimates:
 
 ```{r}
-# fit metafor model
+# metafor ouput
 res.or_rma <- data.frame(f = "rma.uni", 
                         logLik = logLik(m.or.rma)[1],
                         df = attr(logLik(m.or.rma), "df"), 
@@ -293,31 +294,53 @@ kable(rbind(res.or_rma, res.or_tmb))
 
 
 
+
 ### Binomial-Normal model
 
-Fit models with with metafor and glmmTMB:
+Fit model with metafor:
 
 ```{r}
 m2.or.rma <- rma.glmm(measure="OR", 
                       ai=a, bi=b,
                       ci=c, di=d,
                       data=dat.or,
-                      model="UM.RS",
-                      nAGQ=1, #specifies Laplace approximation (it'll do it automatically; can't do nAGQ>1)
+                      model="UM.RS", #unconditional random effects
+                      nAGQ=1, #specify Laplace approximation (for comparison)
+                      method="ML", #default
                       drop00 = F)
 
+```
 
+Fit models with glmmTMB, first need to set up long data format:
+
+```{r}
+# set up long data format
+n <- c(dat.or$a+dat.or$b, dat.or$c+dat.or$d)
+event <- c(dat.or$a, dat.or$c)
+study <- rep(1:nrow(dat.or), each=2)
+obs <- 1:length(n)
+treat <- c(rep(1, nrow(dat.or)), rep(0, nrow(dat.or)))
+control <- 1 - treat
+treat12 <- treat - 0.5
+dat.or_long <- data.frame(study, obs, n, event, treat, control, treat12)
+
+
+# fit two binomial models with glmmTMB
 m2.or.tmb <- glmmTMB(cbind(event,n-event) ~ factor(treat) + (treat12-1|study) + (1|study), 
                          family = binomial(link = "logit"), 
+                         REML = FALSE,
                          data=dat.or_long)
 
 
 m3.or.tmb <- glmmTMB(cbind(event,n-event) ~ factor(treat) + (control+treat-1|study), 
                          family = binomial(link = "logit"), 
+                         REML = FALSE,
                          data=dat.or_long)
 
-
 ```
+
+
+
 
 
 Get estimates to compare all models:
@@ -379,6 +402,13 @@ kable(rbind(res1.or_rma, res1.or_tmb, res2.or_rma, res2.or_tmb, res3.or_tmb))
 ```
 
 
+
+A few notes:
+
+-    `rma.uni` and `glmmTMB` models in the table are using REML (the binomial-normal models uses ML, as i wanted to compare to metafor).
+
+-    the estimates for $\tau^2$ are different for the binomial-normal models... need to check more closely these models and output.
+
 ## Modelling log incidence ratios (IRR)
 
 
@@ -412,7 +442,7 @@ Extract estimates from model:
 
 ```{r}
 # fit metafor model
-m1.irr_rma <- data.frame(f = "rma.uni", 
+res.irr_rma <- data.frame(f = "rma.uni", 
                         logLik = logLik(m.irr.rma)[1],
                         df = attr(logLik(m.irr.rma), "df"), 
                         est = as.numeric(m.irr.rma$b), 
@@ -423,7 +453,7 @@ m1.irr_rma <- data.frame(f = "rma.uni",
 
 # glmmTMB output 
 fix.tmb <- as.data.frame(summary(m.irr.tmb)$coefficients$cond)
-m1.irr_tmb <- data.frame(f = "glmmTMB", 
+res.irr_tmb <- data.frame(f = "glmmTMB", 
                         logLik = logLik(m.irr.tmb)[1],
                         df = attr(logLik(m.irr.tmb), "df"), 
                         est = fix.tmb$Estimate, 
@@ -432,28 +462,88 @@ m1.irr_tmb <- data.frame(f = "glmmTMB",
                         tau2 = sigma(m.irr.tmb)^2
                         )
   
-kable(rbind(m1.irr_rma, m1.irr_tmb))
+kable(rbind(res.irr_rma, res.irr_tmb))
 ```
 
 
 
 ### Poisson-Normal model
 
-```{r}
-# set up long data format
-
-```
-
 Fitting with metafor:
 
 ```{r}
-#rma.glmm(measure="IRR", x1i=x1i, t1i=t1i, x2i=x2i, t2i=t2i, data=dat, model="CM.EL")
+m2.irr.rma <- rma.glmm(measure="IRR",
+                       x1i = yT, t1i = t_T,
+                       x2i = yC, t2i = t_C,
+                       data = dat.irr,
+                       #coding = 0,
+                       nAGQ=1, #specifies Laplace approximation 
+                       method="ML",
+                       model="UM.RS",
+                       drop00 = F) ## drop studies with no cases/events
 ```
+
+Fitting with glmmTMB:
+
+```{r}
+# set up long data format
+dat.irr.long <- data.frame(
+  study     = rep(dat.irr$study, times = 2),
+  trt       = rep(c(-0.5, 0.5), each = nrow(dat.irr)),  # -0.5 = C, 0.5 = T => to match metafor contrast coding
+  t         = c(dat.irr$t_C, dat.irr$t_T),
+  y         = c(dat.irr$yC,  dat.irr$yT),
+  lambda    = c(dat.irr$lambda_C, dat.irr$lambda_T)
+)
+  
+
+# glmmTMB poisson model
+m2.irr.tmb <- glmmTMB(y ~ factor(trt) + offset(log(t)) + (0 + trt | study) + (1|study),
+                         family = poisson(link = "log"),
+                         REML = FALSE, # for comparison with metafor
+                         data=dat.irr.long)
+
+```
+
+Get models output:
+
+```{r}
+# metafor ouput
+res2.irr_rma <- data.frame(f = "rma.glmm", 
+                        logLik = logLik(m2.irr.rma)[1],
+                        df = attr(logLik(m2.irr.rma), "df"), 
+                        est = as.numeric(m2.irr.rma$b), 
+                        se = m2.irr.rma$se, 
+                        pvalue = m2.irr.rma$pval,
+                        tau2 = m2.irr.rma$tau2
+                        )
+
+# glmmTMB output 
+fix.tmb <- as.data.frame(summary(m2.irr.tmb)$coefficients$cond)
+
+res2.irr_tmb <- data.frame(f = "glmmTMB.poisson", 
+                        logLik = logLik(m2.irr.tmb)[1],
+                        df = attr(logLik(m2.irr.tmb), "df"), 
+                        est = fix.tmb$Estimate[2], 
+                        se = fix.tmb$`Std. Error`[2], 
+                        pvalue = fix.tmb$`Pr(>|z|)`[2],
+                        tau2 = VarCorr(m2.irr.tmb)$cond$study[1]
+                        )
+  
+kable(rbind(res2.irr_rma, res2.irr_tmb))
+
+```
+
+Notes:
+
+-   If i don't use the 1/2 contrast coding for the treatment (default in `metafor`), then the $\tau^2$ estimates are not identical across models. 
 
 
 ## Extra - example case studies
 
-### Bivariate meta-analysis
+Here are some examples of other models I'll showcase in this project using published/available meta-analysis datasets.
+
+
+### (1) Case study: Bivariate meta-analysis
 
 Here I use the dataset of meta-analysis on the effectiveness of the BCG vaccine against tuberculosis (Colditz et al., 1994), which is available within the `metafor` package. 
 
@@ -526,7 +616,7 @@ kable(rbind(res.bv_rma, res.bv_tmb))
 
 
 
-## Location-scale meta-analysis 
+## (2) Case study: Location-scale meta-analysis 
 
 Again using the BCG dataset, using a dichotomous variable called `rand` (binary variable for either the study was randomised or not).
 
@@ -603,7 +693,7 @@ kable(rbind(res.ls_rma, res.ls_tmb))
 ```
 
 
-### Phylogenetic meta-analysis with dependent effect sizes
+### (3) Case study: Phylogenetic meta-analysis with dependent effect sizes
 
 Here I demonstrate how to fit a phylogenetic meta-analysis with dependent effect sizes with glmmTMB using a simulated dataset.
 
