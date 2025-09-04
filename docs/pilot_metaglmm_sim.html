@@ -679,7 +679,7 @@ we will assess Binomial-Normal model and Poisson-Normal models.</p>
 <p>Extract model estimates:</p>
 <details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># fit metafor model</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>m1.or_rma <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;rma.uni&quot;</span>, </span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>res.or_rma <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;rma.uni&quot;</span>, </span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(m.or.rma)[<span class="dv">1</span>],</span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(m.or.rma), <span class="st">&quot;df&quot;</span>), </span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                        <span class="at">est =</span> <span class="fu">as.numeric</span>(m.or.rma<span class="sc">$</span>b), </span>
@@ -690,7 +690,7 @@ we will assess Binomial-Normal model and Poisson-Normal models.</p>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co"># glmmTMB output </span></span>
 <span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>fix.tmb <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">summary</span>(m.or.tmb)<span class="sc">$</span>coefficients<span class="sc">$</span>cond)</span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>m1.or_tmb <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;glmmTMB&quot;</span>, </span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>res.or_tmb <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;glmmTMB&quot;</span>, </span>
 <span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(m.or.tmb)[<span class="dv">1</span>],</span>
 <span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(m.or.tmb), <span class="st">&quot;df&quot;</span>), </span>
 <span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>                        <span class="at">est =</span> fix.tmb<span class="sc">$</span>Estimate, </span>
@@ -699,7 +699,7 @@ we will assess Binomial-Normal model and Poisson-Normal models.</p>
 <span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>                        <span class="at">tau2 =</span> <span class="fu">sigma</span>(m.or.tmb)<span class="sc">^</span><span class="dv">2</span></span>
 <span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>                        )</span>
 <span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>  </span>
-<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">rbind</span>(m1.or_rma, m1.or_tmb))</span></code></pre></div>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">rbind</span>(res.or_rma, res.or_tmb))</span></code></pre></div>
 </details>
 <table>
 <thead>
@@ -974,16 +974,260 @@ we will assess Binomial-Normal model and Poisson-Normal models.</p>
 </details>
 </div>
 </div>
-<div id="extra---a-note-about-case-studies" class="section level2">
-<h2>Extra - a note about case studies</h2>
+<div id="extra---example-case-studies" class="section level2">
+<h2>Extra - example case studies</h2>
 <div id="bivariate-meta-analysis" class="section level3">
 <h3>Bivariate meta-analysis</h3>
+<p>Here I use the dataset of meta-analysis on the effectiveness of the
+BCG vaccine against tuberculosis (Colditz et al., 1994), which is
+available within the <code>metafor</code> package.</p>
 <details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">data</span>(dat.bcg)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">data</span>(dat.bcg)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>dat_long <span class="ot">&lt;-</span> <span class="fu">to.long</span>(<span class="at">measure=</span><span class="st">&quot;OR&quot;</span>, <span class="at">ai=</span>tpos, <span class="at">bi=</span>tneg, <span class="at">ci=</span>cpos, <span class="at">di=</span>cneg, <span class="at">data=</span>dat.bcg)</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="fu">levels</span>(dat_long<span class="sc">$</span>group) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;exp&quot;</span>, <span class="st">&quot;con&quot;</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>dat_long<span class="sc">$</span>group <span class="ot">&lt;-</span> <span class="fu">relevel</span>(dat_long<span class="sc">$</span>group, <span class="at">ref=</span><span class="st">&quot;con&quot;</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>dat_long <span class="ot">&lt;-</span> <span class="fu">escalc</span>(<span class="at">measure=</span><span class="st">&quot;PLO&quot;</span>, <span class="at">xi=</span>out1, <span class="at">mi=</span>out2, <span class="at">data=</span>dat_long)</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>dat_long<span class="sc">$</span>obs <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat_long))</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>dat_long<span class="sc">$</span>g <span class="ot">&lt;-</span> <span class="dv">1</span></span></code></pre></div>
 </details>
+<p>Fit bivariate meta-analysis with metafor and glmmTMB:</p>
+<details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># fit with metafor</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>bv_rma <span class="ot">&lt;-</span> <span class="fu">rma.mv</span>(yi, vi, <span class="at">mods =</span> <span class="sc">~</span> group, </span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>                 <span class="at">random =</span> <span class="sc">~</span> group <span class="sc">|</span> study, </span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>                 <span class="at">struct =</span> <span class="st">&quot;UN&quot;</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>                 <span class="at">method =</span> <span class="st">&quot;REML&quot;</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>                 <span class="at">data=</span>dat_long)</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co"># fit with glmmTMB</span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>VCV <span class="ot">&lt;-</span> <span class="fu">diag</span>(dat_long<span class="sc">$</span>vi) <span class="co">#variance covariance matrix for sampling errors</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>bv_TMB <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(yi <span class="sc">~</span> group <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> group<span class="sc">|</span>study) <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> obs<span class="sc">|</span>g,VCV),</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>                  <span class="at">dispformula =</span> <span class="sc">~</span> <span class="dv">0</span>, <span class="co">#set residual variance to zero</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>                  <span class="at">REML =</span> <span class="st">&quot;TRUE&quot;</span>,</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>                  <span class="at">data=</span>dat_long)</span></code></pre></div>
+</details>
+<p>Get models output:</p>
+<details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="co"># metafor output</span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>res.bv_rma <span class="ot">&lt;-</span> <span class="fu">with</span>(bv_rma, <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;rma.mv&quot;</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>                                      <span class="at">logLik =</span> <span class="fu">logLik</span>(bv_rma),</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>                                      <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(bv_rma), <span class="st">&quot;df&quot;</span>),</span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>                                      <span class="at">est.b0 =</span> <span class="fu">as.numeric</span>(b[<span class="dv">1</span>]),</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>                                      <span class="at">se.b0 =</span> se[<span class="dv">1</span>],</span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>                                      <span class="at">est.b1 =</span> <span class="fu">as.numeric</span>(b[<span class="dv">2</span>]),</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>                                      <span class="at">se.b1 =</span> se[<span class="dv">2</span>],</span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>                                      <span class="at">sigma2.con =</span> tau2[<span class="dv">1</span>],</span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>                                      <span class="at">sigma2.exp =</span> tau2[<span class="dv">2</span>],</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>                                      <span class="at">rho =</span> rho))</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a><span class="co"># glmmTMB output</span></span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a>vc <span class="ot">&lt;-</span> <span class="fu">VarCorr</span>(bv_TMB) </span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a>var_con <span class="ot">&lt;-</span> vc<span class="sc">$</span>cond<span class="sc">$</span>study[<span class="st">&quot;groupcon&quot;</span>, <span class="st">&quot;groupcon&quot;</span>]</span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a>var_exp <span class="ot">&lt;-</span> vc<span class="sc">$</span>cond<span class="sc">$</span>study[<span class="st">&quot;groupexp&quot;</span>, <span class="st">&quot;groupexp&quot;</span>]</span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a>rho.tmb <span class="ot">&lt;-</span> vc<span class="sc">$</span>cond<span class="sc">$</span>study[<span class="st">&quot;groupcon&quot;</span>, <span class="st">&quot;groupexp&quot;</span>] <span class="sc">/</span> <span class="fu">sqrt</span>(var_con <span class="sc">*</span> var_exp)</span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a></span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>res.bv_tmb <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;glmmTMB&quot;</span>, </span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a>                      <span class="at">logLik =</span> <span class="fu">logLik</span>(bv_TMB)[<span class="dv">1</span>],</span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a>                      <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(bv_TMB), <span class="st">&quot;df&quot;</span>),                         </span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a>                      <span class="at">est.b0 =</span> <span class="fu">as.numeric</span>(<span class="fu">unlist</span>(<span class="fu">fixef</span>(bv_TMB))[[<span class="dv">1</span>]]), </span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a>                      <span class="at">se.b0 =</span> <span class="fu">as.numeric</span>(<span class="fu">sqrt</span>(<span class="fu">vcov</span>(bv_TMB)[[<span class="dv">1</span>]]))[<span class="dv">1</span>], </span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a>                      <span class="at">est.b1 =</span> <span class="fu">as.numeric</span>(<span class="fu">unlist</span>(<span class="fu">fixef</span>(bv_TMB))[[<span class="dv">2</span>]]), </span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a>                      <span class="at">se.b1 =</span> <span class="fu">as.numeric</span>(<span class="fu">sqrt</span>(<span class="fu">vcov</span>(bv_TMB)[[<span class="dv">1</span>]]))[<span class="dv">4</span>], </span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a>                      <span class="at">sigma2.con =</span> var_con, </span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a>                      <span class="at">sigma2.exp =</span> var_exp, </span>
+<span id="cb19-29"><a href="#cb19-29" tabindex="-1"></a>                      <span class="at">rho =</span> rho.tmb)</span>
+<span id="cb19-30"><a href="#cb19-30" tabindex="-1"></a></span>
+<span id="cb19-31"><a href="#cb19-31" tabindex="-1"></a>  </span>
+<span id="cb19-32"><a href="#cb19-32" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">rbind</span>(res.bv_rma, res.bv_tmb))</span></code></pre></div>
+</details>
+<table>
+<colgroup>
+<col width="8%" />
+<col width="10%" />
+<col width="3%" />
+<col width="10%" />
+<col width="10%" />
+<col width="10%" />
+<col width="10%" />
+<col width="11%" />
+<col width="11%" />
+<col width="10%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">f</th>
+<th align="right">logLik</th>
+<th align="right">df</th>
+<th align="right">est.b0</th>
+<th align="right">se.b0</th>
+<th align="right">est.b1</th>
+<th align="right">se.b1</th>
+<th align="right">sigma2.con</th>
+<th align="right">sigma2.exp</th>
+<th align="right">rho</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">rma.mv</td>
+<td align="right">-31.50167</td>
+<td align="right">5</td>
+<td align="right">-4.837373</td>
+<td align="right">0.3528024</td>
+<td align="right">0.7413877</td>
+<td align="right">0.1880278</td>
+<td align="right">1.548603</td>
+<td align="right">2.617301</td>
+<td align="right">0.9450462</td>
+</tr>
+<tr class="even">
+<td align="left">glmmTMB</td>
+<td align="right">-34.06661</td>
+<td align="right">5</td>
+<td align="right">-4.837373</td>
+<td align="right">0.3533315</td>
+<td align="right">0.7413880</td>
+<td align="right">0.1892419</td>
+<td align="right">1.548560</td>
+<td align="right">2.617215</td>
+<td align="right">0.9450447</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div id="phylogenetic-meta-analysis" class="section level3">
-<h3>Phylogenetic meta-analysis</h3>
+</div>
+<div id="location-scale-meta-analysis" class="section level2">
+<h2>Location-scale meta-analysis</h2>
+<p>Again using the BCG dataset, using a dichotomous variable called
+<code>rand</code> (binary variable for either the study was randomised
+or not).</p>
+<details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>dat.ls <span class="ot">&lt;-</span> <span class="fu">escalc</span>(<span class="at">measure=</span><span class="st">&quot;RR&quot;</span>, <span class="at">ai=</span>tpos,<span class="at">bi=</span>tneg, <span class="at">ci=</span>cpos, <span class="at">di=</span>cneg, <span class="at">data=</span>dat.bcg)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>dat.ls<span class="sc">$</span>rand <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(dat.ls<span class="sc">$</span>alloc <span class="sc">==</span> <span class="st">&quot;random&quot;</span>, <span class="dv">1</span>, <span class="dv">0</span>) <span class="co"># get randomisation variable (from alloc variable)</span></span></code></pre></div>
+</details>
+<p>Fit location-scale meta-analysis in metafor and glmmTMB:</p>
+<details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="co"># fit with metafor</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>m.ls.rma <span class="ot">&lt;-</span> <span class="fu">rma</span>(yi,</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>                vi,</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>                <span class="at">mods=</span> <span class="sc">~</span> rand,</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>                <span class="at">scale =</span> <span class="sc">~</span> rand,</span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>                <span class="at">method =</span> <span class="st">&quot;REML&quot;</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>                <span class="at">data=</span>dat.ls)</span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a><span class="co"># data set up for glmmTMB</span></span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>dat.ls<span class="sc">$</span>g <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a>dat.ls<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat.ls))</span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a>V <span class="ot">&lt;-</span> <span class="fu">diag</span>(dat.ls<span class="sc">$</span>vi, <span class="at">nrow =</span> <span class="fu">nrow</span>(dat.ls)) <span class="co"># variance covariance matrix for sampling errors</span></span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a><span class="co"># fit with glmmTMB</span></span>
+<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a>m.ls.tmb  <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(yi <span class="sc">~</span> rand <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> id<span class="sc">|</span>g,V), <span class="do">##the map variable &quot;id&quot; must be a factor </span></span>
+<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a>                     <span class="at">dispformula =</span> <span class="sc">~</span> rand,</span>
+<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a>                     <span class="at">REML =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb21-19"><a href="#cb21-19" tabindex="-1"></a>                     <span class="at">data =</span> dat.ls)</span></code></pre></div>
+</details>
+<p>Get model outputs:</p>
+<details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a><span class="co"># metafor output</span></span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>res.ls_rma <span class="ot">&lt;-</span> <span class="fu">with</span>(m.ls.rma,</span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>                  <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;rma&quot;</span>, </span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(m.ls.rma ),</span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(m.ls.rma ), <span class="st">&quot;df&quot;</span>), </span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a>                        <span class="at">loc.int.est =</span> <span class="fu">as.numeric</span>(b[<span class="dv">1</span>]), </span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a>                        <span class="at">loc.int.se =</span> se[<span class="dv">1</span>], </span>
+<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a>                        <span class="at">loc.rand.est =</span> <span class="fu">as.numeric</span>(b[<span class="dv">2</span>]), </span>
+<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a>                        <span class="at">loc.rand.se =</span> se[<span class="dv">2</span>], </span>
+<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a>                        <span class="at">scale.int.est =</span> m.ls.rma<span class="sc">$</span>alpha[<span class="dv">1</span>],</span>
+<span id="cb22-12"><a href="#cb22-12" tabindex="-1"></a>                        <span class="at">scale.int.se =</span> m.ls.rma<span class="sc">$</span>se.alpha[<span class="dv">1</span>],</span>
+<span id="cb22-13"><a href="#cb22-13" tabindex="-1"></a>                        <span class="at">scale.rand.est =</span> m.ls.rma<span class="sc">$</span>alpha[<span class="dv">2</span>],</span>
+<span id="cb22-14"><a href="#cb22-14" tabindex="-1"></a>                        <span class="at">scale.rand.se =</span> m.ls.rma<span class="sc">$</span>se.alpha[<span class="dv">2</span>]</span>
+<span id="cb22-15"><a href="#cb22-15" tabindex="-1"></a>                        ))</span>
+<span id="cb22-16"><a href="#cb22-16" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" tabindex="-1"></a><span class="co"># glmmTMB output</span></span>
+<span id="cb22-18"><a href="#cb22-18" tabindex="-1"></a>loc.tmb <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">summary</span>(m.ls.tmb)<span class="sc">$</span>coefficients<span class="sc">$</span>cond)</span>
+<span id="cb22-19"><a href="#cb22-19" tabindex="-1"></a>scale.tmb <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">summary</span>(m.ls.tmb)<span class="sc">$</span>coefficients<span class="sc">$</span>disp)</span>
+<span id="cb22-20"><a href="#cb22-20" tabindex="-1"></a></span>
+<span id="cb22-21"><a href="#cb22-21" tabindex="-1"></a>res.ls_tmb <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;glmmTMB&quot;</span>, </span>
+<span id="cb22-22"><a href="#cb22-22" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(m.ls.tmb )[<span class="dv">1</span>],</span>
+<span id="cb22-23"><a href="#cb22-23" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(m.ls.tmb), <span class="st">&quot;df&quot;</span>), </span>
+<span id="cb22-24"><a href="#cb22-24" tabindex="-1"></a>                        <span class="at">loc.int.est =</span> loc.tmb<span class="sc">$</span>Estimate[<span class="dv">1</span>], </span>
+<span id="cb22-25"><a href="#cb22-25" tabindex="-1"></a>                        <span class="at">loc.int.se =</span> loc.tmb<span class="sc">$</span><span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span>[<span class="dv">1</span>], </span>
+<span id="cb22-26"><a href="#cb22-26" tabindex="-1"></a>                        <span class="at">loc.rand.est =</span> loc.tmb<span class="sc">$</span>Estimate[<span class="dv">2</span>], </span>
+<span id="cb22-27"><a href="#cb22-27" tabindex="-1"></a>                        <span class="at">loc.rand.se =</span> loc.tmb<span class="sc">$</span><span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span>[<span class="dv">2</span>], </span>
+<span id="cb22-28"><a href="#cb22-28" tabindex="-1"></a>                        <span class="at">scale.int.est =</span> scale.tmb<span class="sc">$</span>Estimate[<span class="dv">1</span>]<span class="sc">*</span><span class="dv">2</span>,</span>
+<span id="cb22-29"><a href="#cb22-29" tabindex="-1"></a>                        <span class="at">scale.int.se =</span> scale.tmb<span class="sc">$</span><span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span>[<span class="dv">1</span>]<span class="sc">*</span><span class="dv">2</span>,</span>
+<span id="cb22-30"><a href="#cb22-30" tabindex="-1"></a>                        <span class="at">scale.rand.est =</span> scale.tmb<span class="sc">$</span>Estimate[<span class="dv">2</span>]<span class="sc">*</span><span class="dv">2</span>,</span>
+<span id="cb22-31"><a href="#cb22-31" tabindex="-1"></a>                        <span class="at">scale.rand.se =</span> scale.tmb<span class="sc">$</span><span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span>[<span class="dv">2</span>]<span class="sc">*</span><span class="dv">2</span></span>
+<span id="cb22-32"><a href="#cb22-32" tabindex="-1"></a>                        )</span>
+<span id="cb22-33"><a href="#cb22-33" tabindex="-1"></a>  </span>
+<span id="cb22-34"><a href="#cb22-34" tabindex="-1"></a>  </span>
+<span id="cb22-35"><a href="#cb22-35" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">rbind</span>(res.ls_rma, res.ls_tmb))</span></code></pre></div>
+</details>
+<table style="width:100%;">
+<colgroup>
+<col width="6%" />
+<col width="8%" />
+<col width="2%" />
+<col width="9%" />
+<col width="8%" />
+<col width="10%" />
+<col width="9%" />
+<col width="11%" />
+<col width="10%" />
+<col width="12%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">f</th>
+<th align="right">logLik</th>
+<th align="right">df</th>
+<th align="right">loc.int.est</th>
+<th align="right">loc.int.se</th>
+<th align="right">loc.rand.est</th>
+<th align="right">loc.rand.se</th>
+<th align="right">scale.int.est</th>
+<th align="right">scale.int.se</th>
+<th align="right">scale.rand.est</th>
+<th align="right">scale.rand.se</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">rma</td>
+<td align="right">-10.64795</td>
+<td align="right">4</td>
+<td align="right">-0.4812708</td>
+<td align="right">0.2169879</td>
+<td align="right">-0.4896939</td>
+<td align="right">0.3510492</td>
+<td align="right">-1.553192</td>
+<td align="right">0.9084605</td>
+<td align="right">0.6180447</td>
+<td align="right">1.1327</td>
+</tr>
+<tr class="even">
+<td align="left">glmmTMB</td>
+<td align="right">-12.51679</td>
+<td align="right">4</td>
+<td align="right">-0.4812708</td>
+<td align="right">0.2189835</td>
+<td align="right">-0.4896939</td>
+<td align="right">0.3547369</td>
+<td align="right">-1.553192</td>
+<td align="right">0.9084606</td>
+<td align="right">0.6180446</td>
+<td align="right">1.1327</td>
+</tr>
+</tbody>
+</table>
+<div id="phylogenetic-meta-analysis-with-dependent-effect-sizes" class="section level3">
+<h3>Phylogenetic meta-analysis with dependent effect sizes</h3>
+<p>Here I demonstrate how to fit a phylogenetic meta-analysis with
+dependent effect sizes with glmmTMB using a simulated dataset.</p>
 <p><span class="math display">\[y_{ijk} = \mu + u_{ij} + s_i + n_k + p_k
 + e_{ij}\]</span> <span class="math display">\[u \sim
 N(0,\sigma^2_{u}I_u)\]</span> <span class="math display">\[s \sim N(0,
@@ -996,57 +1240,62 @@ variance component, <span class="math inline">\(\sigma^2_u\)</span> the
 estimate level variance component, <span class="math inline">\(\sigma^2_n\)</span> is the variance of the species
 level random effect, <span class="math inline">\(\sigma^2_p\)</span> is
 the variance of phylogenetic random effect, <span class="math inline">\(\textbf{V*}\)</span> the block diagonal
-variance-covariance matrix of the sampling error, and <span class="math inline">\(\textbf{A}\)</span> is the phylogenetic
-correlation matrix based on a Brownian model of evolution.</p>
+variance-covariance matrix of the sampling error with effect sizes from
+the same study, and <span class="math inline">\(\textbf{A}\)</span> is
+the phylogenetic correlation matrix based on a Brownian model of
+evolution.</p>
 <details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Load some phylo dataset and matrix</span></span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;phylo_simulated_data.RData&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="co"># Load some phylo dataset and matrix</span></span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;phylo_simulated_data.RData&quot;</span>))</span></code></pre></div>
 </details>
 <p>Fit model using metafor:</p>
 <details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>phylo_rma_fit <span class="ot">&lt;-</span> <span class="fu">rma.mv</span>(yi,</span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>                   V,</span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>                   <span class="at">random =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span><span class="sc">|</span> id, <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> study, <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species, <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species.phylo),</span>
-<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>                   <span class="at">R =</span> <span class="fu">list</span>(<span class="at">species.phylo=</span>P),</span>
-<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>                   <span class="at">test =</span> <span class="st">&quot;t&quot;</span>,</span>
-<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>                   <span class="at">dfs =</span> <span class="st">&quot;contain&quot;</span>,</span>
-<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>                   <span class="at">data =</span> dat)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>phylo_rma_fit <span class="ot">&lt;-</span> <span class="fu">rma.mv</span>(yi,</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>                   V,</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>                   <span class="at">random =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span><span class="sc">|</span> id, <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> study, <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species, <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species.phylo),</span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>                   <span class="at">R =</span> <span class="fu">list</span>(<span class="at">species.phylo=</span>P),</span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>                   <span class="at">test =</span> <span class="st">&quot;t&quot;</span>,</span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a>                   <span class="at">dfs =</span> <span class="st">&quot;contain&quot;</span>,</span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a>                   <span class="at">data =</span> dat)</span></code></pre></div>
 </details>
 <p>Fit model using glmmTMB:</p>
 <details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>phylo_tmb_fit <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(yi <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> id<span class="sc">|</span>g,V) <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>study) <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>species) <span class="sc">+</span> <span class="fu">propto</span>(<span class="dv">0</span> <span class="sc">+</span> species<span class="sc">|</span>g,P),</span>
-<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>                       <span class="at">data=</span>dat,</span>
-<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>                       <span class="at">REML=</span>T)</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>phylo_tmb_fit <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(yi <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> id<span class="sc">|</span>g,V) <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>study) <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>species) <span class="sc">+</span> <span class="fu">propto</span>(<span class="dv">0</span> <span class="sc">+</span> species<span class="sc">|</span>g,P),</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>                       <span class="at">data=</span>dat,</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>                       <span class="at">REML=</span>T)</span></code></pre></div>
 </details>
 <p>Compare output of metafor and glmmTMB:</p>
 <details class="chunk-details" open><summary class="chunk-summary"><span class="chunk-summary-text">Code</span></summary>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>phylo_rma <span class="ot">&lt;-</span> <span class="fu">with</span>(phylo_rma_fit,</span>
-<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>                  <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;rma.mv&quot;</span>, </span>
-<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(phylo_rma_fit),</span>
-<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(phylo_rma_fit), <span class="st">&quot;df&quot;</span>), </span>
-<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>                        <span class="at">est =</span> <span class="fu">as.numeric</span>(b), </span>
-<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>                        <span class="at">se =</span> se, </span>
-<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>                        <span class="at">sigma.u =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">1</span>]), </span>
-<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>                        <span class="at">sigma.s =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">2</span>]),</span>
-<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a>                        <span class="at">sigma.n =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">3</span>]),</span>
-<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>                        <span class="at">sigma.p =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">4</span>])</span>
-<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>                        ))</span>
-<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a></span>
-<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a></span>
-<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a>re_tmb <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">confint</span>(phylo_tmb_fit, <span class="at">parm =</span> <span class="st">&quot;theta_&quot;</span>))</span>
-<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a>phylo_tmb <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;glmmTMB&quot;</span>, </span>
-<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(phylo_tmb_fit )[<span class="dv">1</span>],</span>
-<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(phylo_tmb_fit), <span class="st">&quot;df&quot;</span>), </span>
-<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a>                        <span class="at">est =</span> <span class="fu">as.numeric</span>(<span class="fu">unlist</span>(<span class="fu">fixef</span>(phylo_tmb_fit))[[<span class="dv">1</span>]]), </span>
-<span id="cb21-19"><a href="#cb21-19" tabindex="-1"></a>                        <span class="at">se =</span> <span class="fu">as.numeric</span>(<span class="fu">sqrt</span>(<span class="fu">vcov</span>(phylo_tmb_fit)[[<span class="dv">1</span>]])), </span>
-<span id="cb21-20"><a href="#cb21-20" tabindex="-1"></a>                        <span class="at">sigma.u =</span> <span class="fu">sigma</span>(phylo_tmb_fit), </span>
-<span id="cb21-21"><a href="#cb21-21" tabindex="-1"></a>                        <span class="at">sigma.s =</span> re_tmb<span class="sc">$</span>Estimate[<span class="dv">1</span>],</span>
-<span id="cb21-22"><a href="#cb21-22" tabindex="-1"></a>                        <span class="at">sigma.n =</span> re_tmb<span class="sc">$</span>Estimate[<span class="dv">2</span>],</span>
-<span id="cb21-23"><a href="#cb21-23" tabindex="-1"></a>                        <span class="at">sigma.p =</span> re_tmb<span class="sc">$</span>Estimate[<span class="dv">3</span>] </span>
-<span id="cb21-24"><a href="#cb21-24" tabindex="-1"></a>                        )</span>
-<span id="cb21-25"><a href="#cb21-25" tabindex="-1"></a>  </span>
-<span id="cb21-26"><a href="#cb21-26" tabindex="-1"></a>  </span>
-<span id="cb21-27"><a href="#cb21-27" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">rbind</span>(phylo_rma, phylo_tmb))</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="co"># metafor output</span></span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>phylo_rma <span class="ot">&lt;-</span> <span class="fu">with</span>(phylo_rma_fit,</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>                  <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;rma.mv&quot;</span>, </span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(phylo_rma_fit),</span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(phylo_rma_fit), <span class="st">&quot;df&quot;</span>), </span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>                        <span class="at">est =</span> <span class="fu">as.numeric</span>(b), </span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a>                        <span class="at">se =</span> se, </span>
+<span id="cb26-8"><a href="#cb26-8" tabindex="-1"></a>                        <span class="at">sigma.u =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">1</span>]), </span>
+<span id="cb26-9"><a href="#cb26-9" tabindex="-1"></a>                        <span class="at">sigma.s =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">2</span>]),</span>
+<span id="cb26-10"><a href="#cb26-10" tabindex="-1"></a>                        <span class="at">sigma.n =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">3</span>]),</span>
+<span id="cb26-11"><a href="#cb26-11" tabindex="-1"></a>                        <span class="at">sigma.p =</span> <span class="fu">sqrt</span>(sigma2[<span class="dv">4</span>])</span>
+<span id="cb26-12"><a href="#cb26-12" tabindex="-1"></a>                        ))</span>
+<span id="cb26-13"><a href="#cb26-13" tabindex="-1"></a></span>
+<span id="cb26-14"><a href="#cb26-14" tabindex="-1"></a><span class="co"># glmmTMB output</span></span>
+<span id="cb26-15"><a href="#cb26-15" tabindex="-1"></a>re_tmb <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">confint</span>(phylo_tmb_fit, <span class="at">parm =</span> <span class="st">&quot;theta_&quot;</span>))</span>
+<span id="cb26-16"><a href="#cb26-16" tabindex="-1"></a>fix_tmb <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">summary</span>(phylo_tmb_fit)<span class="sc">$</span>coefficients<span class="sc">$</span>cond)</span>
+<span id="cb26-17"><a href="#cb26-17" tabindex="-1"></a></span>
+<span id="cb26-18"><a href="#cb26-18" tabindex="-1"></a>phylo_tmb <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">f =</span> <span class="st">&quot;glmmTMB&quot;</span>, </span>
+<span id="cb26-19"><a href="#cb26-19" tabindex="-1"></a>                        <span class="at">logLik =</span> <span class="fu">logLik</span>(phylo_tmb_fit )[<span class="dv">1</span>],</span>
+<span id="cb26-20"><a href="#cb26-20" tabindex="-1"></a>                        <span class="at">df =</span> <span class="fu">attr</span>(<span class="fu">logLik</span>(phylo_tmb_fit), <span class="st">&quot;df&quot;</span>), </span>
+<span id="cb26-21"><a href="#cb26-21" tabindex="-1"></a>                        <span class="at">est =</span> fix_tmb<span class="sc">$</span>Estimate, </span>
+<span id="cb26-22"><a href="#cb26-22" tabindex="-1"></a>                        <span class="at">se =</span> fix_tmb<span class="sc">$</span><span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span>, </span>
+<span id="cb26-23"><a href="#cb26-23" tabindex="-1"></a>                        <span class="at">sigma.u =</span> <span class="fu">sigma</span>(phylo_tmb_fit), </span>
+<span id="cb26-24"><a href="#cb26-24" tabindex="-1"></a>                        <span class="at">sigma.s =</span> re_tmb<span class="sc">$</span>Estimate[<span class="dv">1</span>],</span>
+<span id="cb26-25"><a href="#cb26-25" tabindex="-1"></a>                        <span class="at">sigma.n =</span> re_tmb<span class="sc">$</span>Estimate[<span class="dv">2</span>],</span>
+<span id="cb26-26"><a href="#cb26-26" tabindex="-1"></a>                        <span class="at">sigma.p =</span> re_tmb<span class="sc">$</span>Estimate[<span class="dv">3</span>] </span>
+<span id="cb26-27"><a href="#cb26-27" tabindex="-1"></a>                        )</span>
+<span id="cb26-28"><a href="#cb26-28" tabindex="-1"></a>  </span>
+<span id="cb26-29"><a href="#cb26-29" tabindex="-1"></a>  </span>
+<span id="cb26-30"><a href="#cb26-30" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">rbind</span>(phylo_rma, phylo_tmb))</span></code></pre></div>
 </details>
 <table style="width:100%;">
 <colgroup>
@@ -1099,23 +1348,16 @@ correlation matrix based on a Brownian model of evolution.</p>
 </tbody>
 </table>
 </div>
-<div id="location-scale-meta-analysis" class="section level3">
-<h3>Location-scale meta-analysis</h3>
-</div>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>
-<p>Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A.,
-Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M., &amp; Bolker, B. M.
-(2017). glmmTMB balances speed and flexibility among packages for
-zero-inflated generalized linear mixed modeling. R Journal, 9(2),
-378–400. <a href="https://doi.org/10.32614/RJ-2017-066" class="uri">https://doi.org/10.32614/RJ-2017-066</a></p>
-<p>Jackson, D., Law, M., Stijnen, T., Viechtbauer, W., &amp; White, I.
-R. (2018). A comparison of seven random-effects models for meta-analyses
-that estimate the summary odds ratio. Statistics in Medicine, 37(7),
-1059–1085. <a href="https://doi.org/10.1002/sim.7588" class="uri">https://doi.org/10.1002/sim.7588</a></p>
-<p>Viechtbauer, W. (2010). Conducting meta-analyses in R with the
-metafor package. Journal of Statistical Software, 36(3), 1-48. <a href="https://cran.r-project.org/web/packages/metafor/index.html" class="uri">https://cran.r-project.org/web/packages/metafor/index.html</a></p>
+<pre><code>Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M., &amp; Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. R Journal, 9(2), 378–400. https://doi.org/10.32614/RJ-2017-066
+
+Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). Efficacy of BCG Vaccine in the Prevention of Tuberculosis: Meta-analysis of the Published Literature. JAMA, 271(9), 698–702. https://doi.org/10.1001/jama.1994.03510330076038
+
+Jackson, D., Law, M., Stijnen, T., Viechtbauer, W., &amp; White, I. R. (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Statistics in Medicine, 37(7), 1059–1085. https://doi.org/10.1002/sim.7588
+
+Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. Journal of Statistical Software, 36(3), 1-48. https://cran.r-project.org/web/packages/metafor/index.html</code></pre>
 </div>
 
 

@@ -526,6 +526,83 @@ kable(rbind(res.bv_rma, res.bv_tmb))
 
 
 
+## Location-scale meta-analysis 
+
+Again using the BCG dataset, using a dichotomous variable called `rand` (binary variable for either the study was randomised or not).
+
+
+```{r}
+dat.ls <- escalc(measure="RR", ai=tpos,bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat.ls$rand <- ifelse(dat.ls$alloc == "random", 1, 0) # get randomisation variable (from alloc variable)
+
+```
+
+Fit location-scale meta-analysis in metafor and glmmTMB:
+
+```{r}
+# fit with metafor
+m.ls.rma <- rma(yi,
+                vi,
+                mods= ~ rand,
+                scale = ~ rand,
+                method = "REML",
+                data=dat.ls)
+
+
+# data set up for glmmTMB
+dat.ls$g <- 1
+dat.ls$id <- as.factor(1:nrow(dat.ls))
+V <- diag(dat.ls$vi, nrow = nrow(dat.ls)) # variance covariance matrix for sampling errors
+
+# fit with glmmTMB
+m.ls.tmb  <- glmmTMB(yi ~ rand + equalto(0 + id|g,V), ##the map variable "id" must be a factor 
+                     dispformula = ~ rand,
+                     REML = TRUE,
+                     data = dat.ls)
+```
+
+Get model outputs:
+
+```{r}
+
+# metafor output
+res.ls_rma <- with(m.ls.rma,
+                  data.frame(f = "rma", 
+                        logLik = logLik(m.ls.rma ),
+                        df = attr(logLik(m.ls.rma ), "df"), 
+                        loc.int.est = as.numeric(b[1]), 
+                        loc.int.se = se[1], 
+                        loc.rand.est = as.numeric(b[2]), 
+                        loc.rand.se = se[2], 
+                        scale.int.est = m.ls.rma$alpha[1],
+                        scale.int.se = m.ls.rma$se.alpha[1],
+                        scale.rand.est = m.ls.rma$alpha[2],
+                        scale.rand.se = m.ls.rma$se.alpha[2]
+                        ))
+
+# glmmTMB output
+loc.tmb <- as.data.frame(summary(m.ls.tmb)$coefficients$cond)
+scale.tmb <- as.data.frame(summary(m.ls.tmb)$coefficients$disp)
+
+res.ls_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(m.ls.tmb )[1],
+                        df = attr(logLik(m.ls.tmb), "df"), 
+                        loc.int.est = loc.tmb$Estimate[1], 
+                        loc.int.se = loc.tmb$`Std. Error`[1], 
+                        loc.rand.est = loc.tmb$Estimate[2], 
+                        loc.rand.se = loc.tmb$`Std. Error`[2], 
+                        scale.int.est = scale.tmb$Estimate[1]*2,
+                        scale.int.se = scale.tmb$`Std. Error`[1]*2,
+                        scale.rand.est = scale.tmb$Estimate[2]*2,
+                        scale.rand.se = scale.tmb$`Std. Error`[2]*2
+                        )
+  
+  
+kable(rbind(res.ls_rma, res.ls_tmb))
+
+```
+
+
 ### Phylogenetic meta-analysis with dependent effect sizes
 
 Here I demonstrate how to fit a phylogenetic meta-analysis with dependent effect sizes with glmmTMB using a simulated dataset.
