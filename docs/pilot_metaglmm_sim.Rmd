@@ -455,7 +455,7 @@ Fitting with metafor:
 
 ### Bivariate meta-analysis
 
-We will use a dataset of meta-analysis on the effectiveness of the BCG vaccine against tuberculosis (Colditz et al., 1994), which is already loaded within the `metafor` package. 
+Here I use the dataset of meta-analysis on the effectiveness of the BCG vaccine against tuberculosis (Colditz et al., 1994), which is available within the `metafor` package. 
 
 ```{r}
 data(dat.bcg)
@@ -526,85 +526,9 @@ kable(rbind(res.bv_rma, res.bv_tmb))
 
 
 
-### Location-scale meta-analysis
-
-We will continue to use the BCG dataset for the following example, and derive a dichotimised variable called `random`.
-
-
-```{r}
-dat.ls <- escalc(measure="RR", ai=tpos,bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat.ls$random <- ifelse(dat.ls$alloc == "random", 1, 0) # get randomisation variable (from alloc variable)
-
-```
-
-Fit location-scale meta-analysis in metafor and glmmTMB:
-
-```{r}
-# fit with metafor
-m.ls.rma <- rma(yi,
-                vi,
-                mods= ~ random,
-                scale = ~ random,
-                data=dat.ls)
-
-
-# data set up for glmmTMB
-dat.ls$g <- 1
-dat.ls$id <- as.factor(1:nrow(dat.ls))
-V <- diag(dat.ls$vi, nrow = nrow(dat.ls)) # variance covariance matrix for sampling errors
-
-# fit with glmmTMB
-m.ls.tmb  <- glmmTMB(yi ~ random + equalto(0 + id|g,V), ##the map variable "id" must be a factor
-                     dispformula = ~ random,
-                     REML = TRUE,
-                     data = dat.ls)
-```
-
-Get model outputs:
-
-```{r}
-
-# metafor output
-res.ls_rma <- with(m.ls.rma,
-                  data.frame(f = "rma", 
-                        logLik = logLik(m.ls.rma ),
-                        df = attr(logLik(m.ls.rma ), "df"), 
-                        est = as.numeric(b), 
-                        se = se, 
-                        sigma.u = sqrt(sigma2[1]), 
-                        sigma.s = sqrt(sigma2[2]),
-                        sigma.n = sqrt(sigma2[3]),
-                        sigma.p = sqrt(sigma2[4])
-                        ))
-
-# glmmTMB output
-re_tmb <- as.data.frame(confint(m.ls.tmb, parm = "theta_"))
-fix_tmb <- as.data.frame(summary(m.ls.tmb)$coefficients$cond)
-
-
-res.ls_tmb <- data.frame(f = "glmmTMB", 
-                        logLik = logLik(m.ls.tmb )[1],
-                        df = attr(logLik(m.ls.tmb), "df"), 
-                        est = fix_tmb$Estimate, 
-                        se = fix_tmb$`Std. Error`, 
-                        sigma.u = sigma(m.ls.tmb), 
-                        sigma.s = re_tmb$Estimate[1],
-                        sigma.n = re_tmb$Estimate[2],
-                        sigma.p = re_tmb$Estimate[3] 
-                        )
-  
-  
-kable(rbind(res.ls_rma, res.ls_tmb))
-
-```
-
-
-
-
-
 ### Phylogenetic meta-analysis with dependent effect sizes
 
-Here I will demonstrate a phylogenetic meta-analysis with dependent effect sizes using a simulated dataset.
+Here I demonstrate how to fit a phylogenetic meta-analysis with dependent effect sizes with glmmTMB using a simulated dataset.
 
 
 $$y_{ijk} = \mu + u_{ij} + s_i + n_k + p_k + e_{ij}$$ 

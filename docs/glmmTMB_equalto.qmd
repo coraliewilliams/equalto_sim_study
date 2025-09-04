@@ -749,7 +749,7 @@ set.seed(123)
 
 
 
-## Location-scale meta-analysis (TBD/incomplete)
+## Location-scale meta-analysis 
 
 <!-- file:///C:/Users/z5394590/OneDrive%20-%20UNSW/Documents/Ref/2023_viechtbauer_esmarconf_location_scale_models_with_metafor.pdf -->
 
@@ -815,10 +815,10 @@ res.ls_tmb <- data.frame(f = "glmmTMB",
                         loc.int.se = loc.tmb$`Std. Error`[1], 
                         loc.rand.est = loc.tmb$Estimate[2], 
                         loc.rand.se = loc.tmb$`Std. Error`[2], 
-                        scale.int.est = scale.tmb$Estimate[1],
-                        scale.int.se = scale.tmb$`Std. Error`[1],
-                        scale.rand.est = scale.tmb$Estimate[2],
-                        scale.rand.se = scale.tmb$`Std. Error`[2]
+                        scale.int.est = scale.tmb$Estimate[1]*2,
+                        scale.int.se = scale.tmb$`Std. Error`[1]*2,
+                        scale.rand.est = scale.tmb$Estimate[2]*2,
+                        scale.rand.se = scale.tmb$`Std. Error`[2]*2
                         )
   
   
@@ -827,180 +827,7 @@ kable(rbind(res.ls_rma, res.ls_tmb))
 ```
 
 
-
---------------------------------------
-
-> Further for location-scale models examples below (still in progress)
-
-Location-scale meta-regression models allow for heteroscedasticity in the sampling errors:
--   more flexible
--   can be used to model the variance of the sampling errors as a function of covariates (e.g. study-level covariates)
--   location and scale variables can be different
-
-
-Replicate Example 2 from Nakagawa et al., 2025 that uses data from the following paper: 
-
-> Midolo, G.
-> et al. (2019).
-> Global patterns of intraspecific leaf trait responses to elevation.
-> Global Change Biology, 25(7), 2485–2498.
-
-
-```{r}
-#| echo: false
-#| warning: false
-
-
-
-# load
-dat <- read.csv(here("data", "elevation.csv"))
-# calculate es
-# filter data Narea
-dat <- dat[which(dat$trait == "Narea"),]
-
-dat$study_ID <- as.factor(dat$Study_ID)
-dat$es_ID <- as.factor(1:nrow(dat))
-
-# using escalc use ROM
-
-dat <- escalc(measure = "ROM",
-              m1i = treatment,
-              m2i = control,
-              sd1i = sd_treatment,
-              sd2i = sd_control,
-              n1i = n_treatment,
-              n2i = n_control,
-              data = dat)
-
-
-# rename for the consistency
-dat$study_ID <- as.factor(dat$Study_ID)
-dat$es_ID <- as.factor(1:nrow(dat))
-
-# selecte varaibles we need
-dat <- dat |> 
-  dplyr::select(yi, vi, es_ID, study_ID, elevation_log)
-```
-
-
-
-First, need to construct a VCV matrix for sampling errors:
-
-```{r}
-#| echo: false
-#| warning: false
-
-vcv <- diag(dat$vi)
-rownames(vcv) <- dat$es_ID
-colnames(vcv) <- dat$es_ID
-```
-
-
-Here is the results of the `brms` model used in Nakagawa et al. 2025 that (1) use `bf()` from `brms` to build models for location and scale part, (2) specify weakly informative (default) priors, and (3) fit the model to get MCMC:
-
-```{r}
-#| eval: false
-#| cache: false
-
-brms_mals <- bf(yi
-             ~ 1  +
-               (1|p|study_ID) + # this is u
-               (1|gr(es_ID, cov = vcv)), # this is m
-             sigma ~ 1 + (1|p|study_ID)
-)
-
-
-
-prior <- default_prior(brms_mals,
-                         data = dat,
-                         data2 = list(vcv = vcv),
-                         family = gaussian()
-)
-
-#fixing the variance to 1 (meta-analysis)
-prior$prior[5] = "constant(1)"
-
-# fit model
-fit_brms_mals <- brm(brms_mals,
-             data = dat,
-             data2 = list(vcv = vcv),
-             chains = 2,
-             cores = 2,
-             iter = 6000,
-             warmup = 3000,
-             prior = prior,
-             control = list(adapt_delta = 0.95, max_treedepth = 15)
-)
-
-saveRDS(fit_brms_mals, file = here("data", "brms_mals.rds"))
-
-```
-
-
-The results show that there is a non-zero variance (heteroscedasticity), suggesting the location-scale meta-regression is preferred over a regular meta-regression:
-
-
-```{r}
-#| echo: false
-#| warning: false
-
-#readRDS(here("data", "brms_mals.rds")) # load brms model
-#summary(fit_brms_mals)
-
-```
-
-
-
-
-With metafor, random effects location-scale model:
-
-```{r}
-#| echo: false
-#| warning: false
-
-fit_rma_mals <- rma.mv(yi, vi,
-                   random = list(~ 1 | study_ID, ~ 1 | es_ID),
-                   data = dat,
-                   R = list(es_ID = vcv),
-                   test = "t",
-                   dfs = "contain",
-                   method = "REML")
-
-```
-
-
-
-
-
-Now we can fit the model using `glmmTMB` with the `equalto` covariance structure. The model is specified with a random intercept for each study and a random slope for elevation. 
-
-
-```{r}
-#| echo: false
-#| warning: false
-
-# data grouping factor
-dat$g <- 1
-
-# fit glmmTMB location-scale meta-analysis
-fit_tmb_mals <- glmmTMB(yi ~ 1 + (1|study_ID) + equalto(0 + es_ID|g, vcv),
-              data = dat,
-              REML = TRUE,
-              dispformula = ~ 1 + (1|study_ID))
-
-
-# get random effect estimates
-ref_tmb_mals <- as.data.frame(confint(fit_tmb_mals))
-
-
-# get profile likelihood ====> not possible for REML models at the moment
-#profile(fit_tmb_mals)
-
-```
-
-
-
-## Non-Gaussian meta-analysis (TBD/incomplete)
+## Non-Gaussian meta-analysis (TBD)
 
 
 ### Modelling log odds ratios
@@ -1301,7 +1128,7 @@ Let's check the profiling of the glmmTMB model for this dataset to see which par
 
 ```{r}
 #| cache: TRUE
-#| eval: TRUE
+#| eval: FALSE
 #| echo: TRUE
 #| warning: FALSE
 
