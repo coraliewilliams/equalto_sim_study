@@ -1,0 +1,26 @@
+---
+title: "Fitting meta-analysis with `glmmTMB` package `equalto` covariance structure"
+author: "Coralie Williams"
+date: "Last compiled on `r format(Sys.time(), '%d %B, %Y')`"
+format:
+  html:
+    page-layout: full
+    toc: true
+    toc-location: left
+    toc-depth: 2
+    theme: default
+    embed-resources: true
+    code-fold: false
+    code-tools: true
+    number-sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+# Tutorial 
+
+
+
+# Case studies

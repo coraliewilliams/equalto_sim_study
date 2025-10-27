@@ -129,7 +129,7 @@ Fit random effects meta-analysis with metafor and glmmTMB:
 
 ```{r}
 # fit metafor model
-m.smd.rma <- rma(yi, vi, data=dat.smd)
+m.smd.rma <- rma(yi, vi, data=dat.smd, control=list(REMLf=FALSE))
 
 # fit glmmTMB model
 dat.smd$g <- 1
@@ -303,12 +303,11 @@ Fit model with metafor:
 m2.or.rma <- rma.glmm(measure="OR", 
                       ai=a, bi=b,
                       ci=c, di=d,
-                      data=dat.or,
-                      model="UM.RS", #unconditional random effects
-                      nAGQ=1, #specify Laplace approximation (for comparison)
-                      method="ML", #default
+                      data = dat.or,
+                      model = "UM.RS", #unconditional random effects
+                      nAGQ = 1, #specify Laplace approximation (for comparison)
+                      method = "ML", #default
                       drop00 = F)
-
 ```
 
 Fit models with glmmTMB, first need to set up long data format:
@@ -347,25 +346,6 @@ Get estimates to compare all models:
 
 
 ```{r}
-res1.or_rma <- data.frame(f = "rma.uni", 
-                        logLik = logLik(m.or.rma)[1],
-                        df = attr(logLik(m.or.rma), "df"), 
-                        est = as.numeric(m.or.rma$b), 
-                        se = m.or.rma$se, 
-                        pvalue = m.or.rma$pval,
-                        tau2 = m.or.rma$tau2
-                        )
-
-
-res1.or_tmb <- data.frame(f = "glmmTMB", 
-                        logLik = logLik(m.or.tmb)[1],
-                        df = attr(logLik(m.or.tmb), "df"), 
-                        est = as.numeric(unlist(fixef(m.or.tmb))[[1]]), 
-                        se = as.numeric(sqrt(vcov(m.or.tmb)[[1]])), 
-                        pvalue = summary(m.or.tmb)$coefficients$cond[1, "Pr(>|z|)"],
-                        tau2 = sigma(m.or.tmb)^2
-                        )
-
 res2.or_rma <- data.frame(f = "rma.glmm", 
                         logLik = logLik(m2.or.rma)[1],
                         df = attr(logLik(m2.or.rma), "df"), 
@@ -381,7 +361,7 @@ res2.or_tmb <- data.frame(f = "glmmTMB.binomial.1",
                         est = as.numeric(unlist(fixef(m2.or.tmb))[2]), 
                         se = as.numeric(sqrt(vcov(m2.or.tmb)$cond[2,2])), 
                         pvalue = summary(m2.or.tmb)$coefficients$cond[2, "Pr(>|z|)"],
-                        tau2 = c((VarCorr(m2.or.tmb)$cond$study))
+                        tau2 = (VarCorr(m2.or.tmb)$cond$study)[1]
                         )
 
 res3.or_tmb <- data.frame(f = "glmmTMB.binomial.2", 
@@ -396,7 +376,7 @@ res3.or_tmb <- data.frame(f = "glmmTMB.binomial.2",
                       )
 
 
-kable(rbind(res1.or_rma, res1.or_tmb, res2.or_rma, res2.or_tmb, res3.or_tmb))
+kable(rbind(res.or_rma, res.or_tmb, res2.or_rma, res2.or_tmb, res3.or_tmb))
 
 
 ```
@@ -407,7 +387,8 @@ A few notes:
 
 -    `rma.uni` and `glmmTMB` models in the table are using REML (the binomial-normal models uses ML, as i wanted to compare to metafor).
 
--    the estimates for $\tau^2$ are different for the binomial-normal models... need to check more closely these models and output.
+-    the estimates for $\tau^2$ are different for the binomial-normal models... need to check more closely these models and output, I might have mixed up something when getting the long dataset format.
+
 
 ## Modelling log incidence ratios (IRR)
 
@@ -616,7 +597,7 @@ kable(rbind(res.bv_rma, res.bv_tmb))
 
 
 
-## (2) Case study: Location-scale meta-analysis 
+### (2) Case study: Location-scale meta-analysis 
 
 Again using the BCG dataset, using a dichotomous variable called `rand` (binary variable for either the study was randomised or not).
 
