@@ -1,26 +1,253 @@
 ---
-title: "Fitting meta-analysis with `glmmTMB` package `equalto` covariance structure"
+title: "Meta-analysis with glmmTMB R package"
 author: "Coralie Williams"
 date: "Last compiled on `r format(Sys.time(), '%d %B, %Y')`"
 format:
   html:
-    page-layout: full
     toc: true
     toc-location: left
-    toc-depth: 2
-    theme: default
+    toc-depth: 3
+    theme: default #default, pandoc, none, cosmo, yeti
     embed-resources: true
-    code-fold: false
+    code-fold: show
     code-tools: true
     number-sections: true
+    number-depth: 2
+    footnote-location: margin
 editor_options: 
   chunk_output_type: console
 ---
 
+This webpage is supporting material to the paper "*Meta-analysis with `glmmTMB` R package*".
 
 
-# Tutorial 
+ `equalto` covariance structure
+
+
+### Contact {#contact} 
+ 
+For questions or comments, contact Coralie Williams: 
+[coraliewilliams@outlook.com](mailto:coraliewilliams@outlook.com)
 
 
 
-# Case studies
+# Fitting a meta-analysis with `glmmTMB`
+
+To demonstrate how to fit a meta-analysis using the `glmmTMB` R package, we will fit a multilevel meta-analytic model as a tutorial example, assuming multiple effect sizes per study. This model synthesises effect sizes across studies by accounting for variation at both the study and observation (effect size) levels, while also modelling correlated residual errors within studies.
+
+Given $j$ effect sizes within $i$ studies, we specify the model as:
+
+$$
+y_{ij} = b_0 + u_i + m_{ij} + e_{ij},
+$$
+
+where $b_0$ is the overall mean effect, $u_i \sim N(0, \sigma^2_{u}I)$ represents the among-study random effect, $m_{ij} \sim N(0, \sigma^2_{m}I)$ captures the within-study random effect (at the observation-level), and $e_{ij} \sim N(0, \text{VCV})$ are the sampling errors at the observation-level.
+
+$\text{VCV}$ represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances $\sigma^2_{e}=v_i$ on the diagonal and accounts for correlations among sampling errors from the same study.
+
+
+
+### Load `glmmTMB` package
+
+Currently, `equalto` is not on CRAN (but soon it will be available***), so you need to install `glmmTMB` from the [following branch](https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc): 
+
+::: callout-note
+**Important note:** If you have `glmmTMB` already installed, you will need to uninstall it first. 
+:::
+
+
+```{r}
+#| eval: false
+#| output: false
+#| warnings: false
+#| 
+# build package from branch: 
+remotes::install_github("coraliewilliams/glmmTMB", ref="equalto_covstruc", subdir="glmmTMB")
+```
+
+
+Load `glmmTMB` package:
+
+```{r}
+library(glmmTMB)
+```
+
+
+Check if the `equalto` covariance structure is available (it should be in position 13 of this output)
+:
+```{r}
+glmmTMB:::.valid_covstruct
+```
+
+
+
+### Simulate some data
+
+Now, let's simulate some data following the structure of the above multilevel meta-analysis.
+
+```{r}
+# load libraries
+library(MASS)
+library(kableExtra)
+library(metafor)
+
+
+# set up indices
+set.seed(123)
+k.studies <- 50 # number of studies
+k.per.study <- 10 # number of effect sizes per study
+study <- rep(seq_len(k.studies), times=k.per.study) # study id 
+k <- length(study) # total number of effect sizes
+id <- seq_len(k) # id of between study effect sizes 
+es.id <- unlist(lapply(k.per.study, seq_len)) # id of within study effect sizes
+
+
+# fixed effect coeff true value (i.e. the overall mean)
+b0 <- 0
+
+# simulate sampling errors variances
+vi <- rbeta(k, 2, 20)
+
+# get VCV matrix assuming within-study correlation of rho=0.5 
+V <- matrix(0, nrow = k, ncol = k) 
+for (i in 2:k) {
+  for (j in 1:i) {
+    if (study[i] == study[j]) {
+      V[i,j] <- 0.5 * sqrt(vi[i] * vi[j]) 
+    }
+  }
+}
+V[upper.tri(V)] <- t(V)[upper.tri(V)] # fill in upper diagonal
+diag(V) <- vi # fill in diagonal
+
+
+# random effects
+sigma2.u <- 0.2
+sigma2.m <- 0.3
+u <- rnorm(k.studies, 0, sqrt(sigma2.u))[study]
+m <- rnorm(k, 0, sqrt(sigma2.m))
+#e <- rnorm(k, 0, sqrt(vi))[study] #without within-study correlation (diag VCV)
+e <- mvrnorm(n = 1, mu = rep(0, length(vi)), Sigma = V) 
+
+
+# compute y
+y <- b0 + u + m + e
+
+
+# combine into dataframe
+dat <- data.frame(y = y,
+                  vi = vi,
+                  study = study,
+                  id = id,
+                  es.id = es.id,
+                  obs = as.factor(id), #unique ID for propto and equalto (really important it is a factor variable)
+                  g = 1 #group ID for propto and equalto (a constant here)
+)
+```
+
+
+### Run model
+
+Before we fit the model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of $\rho=0.5$. The correlation between effect sizes from different studies is assumed to be zero.
+
+We use the metafor `vcalc` function to obtain a block diagonal VCV matrix for the sampling errors:
+
+```{r}
+VCV <- metafor::vcalc(vi, cluster=study, obs=obs, data=dat, rho=0.5)
+```
+
+Now we fit the `glmmTMB` model with `equalto` covariance structure. 
+
+We specify:
+
+-   the study-level random effect $u_i$ as `(1|study)`.
+
+-   the sampling errors $e_{ij}$ are specified using the covariance structure `equalto(0 + obs|g,VCV)` allowing to specify the VCV matrix of the sampling errors.
+
+-   the within-study random effect $m_{ij}$ that captures the variability at the observation level is modelled as the *residual error* in this model. 
+
+```{r}
+# Fit glmmTMB model with equalto ----------------------------------
+fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
+                       data=dat,
+                       REML=T)
+```
+
+Let's compare with the `metafor` package `rma.mv` function that fits a multilevel model with random effects. Here the model is specified with two random effects: `(1|study)` corresponding to the among-study ($u_i$) and `(1|id)` corresponding to the within-study ($m_{ij}$) random effects. The sampling errors $e_{ij}$ VCV matrix is specified using the `V` argument.
+
+
+```{r}
+# Fit metafor model --------------------------------------------
+fit.metafor <- rma.mv(yi = y, 
+                      V = VCV,
+                      random = list(~1 | study, ~1 | id),
+                      test = "t",
+                      dfs = "contain",
+                      data = dat) #used REML by default
+```
+
+
+Then, we extract the model results for each model and compare outputs:
+
+
+
+```{r}
+
+### Compare output 
+metafor <- data.frame(model = "metafor", 
+                      est = fit.metafor$b[[1]], 
+                      se = fit.metafor$se[[1]], 
+                      zval = fit.metafor$zval,
+                      pval = fit.metafor$pval,
+                      sigma.u = sqrt(fit.metafor$sigma2[1]), ## among study variance
+                      sigma.m = sqrt(fit.metafor$sigma2[2])) ## within study variance
+
+equalto <- data.frame(model = "equalto",
+                      est = unlist(fixef(fit.equalto))[[1]],
+                      se = as.numeric(sqrt(vcov(fit.equalto)[[1]])),
+                      zval = summary(fit.equalto)$coefficients$cond[3],
+                      pval = summary(fit.equalto)$coefficients$cond[4],
+                      sigma.u = exp(fit.equalto$fit$par[[2]]), ##among study variance estimate
+                      sigma.m = sigma(fit.equalto)) ##within study variance estimate
+
+
+output <- rbind(metafor, equalto)
+kable(output)
+
+```
+
+The overall mean estimate and random effect variance estimates are identical across the two packages. 
+
+
+
+
+
+
+# Illustrative examples
+
+
+
+## Multilevel meta-analysis
+
+
+
+## Bivariate meta-analysis
+
+
+
+
+## Phylogenetic meta-analysis
+
+
+
+## Location-scale meta-analysis
+
+
+
+
+
+
+
+# Simulation study 
+
+
