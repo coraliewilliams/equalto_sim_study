@@ -1,0 +1,772 @@
+---
+title: "Meta-analysis models in glmmTMB: pilot simulation study"
+author: "Coralie Williams"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    fig_width: 8
+    fig_height: 6
+    code_folding: show
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  #comment = "#>",
+  fig.width=7.5,
+  fig.height=5
+)
+
+options(rmarkdown.html_vignette.check_title = FALSE)
+
+# load libraries
+pacman::p_load(metafor,
+               glmmTMB,
+               ggplot2,
+               tidyverse,
+               cowplot,
+               ggdark,
+               ggdist,
+               gridExtra,
+               kableExtra,
+               here, 
+               ape)
+
+```
+
+This vignette describes the pilot simulation study results assessing the `equalto` covariance implementation in `glmmTMB` (Brooks et al., 2019). The simulation study aims to compare the new implementation with the `metafor` R package (Viechtbauer, 2010) for validation and proof-of-concept. 
+
+For demonstration purposes, this pilot study assesses feasibility by simulating a single dataset, examining one condition per parameter, and fitting all models planned for the full simulation study.
+
+We will investigate four effect size measures:
+
+*   Standardised Mean Difference (SMD)
+
+*   Log Response Ratio (lnRR) 
+
+*   Odd ratio effect sizes (OR)
+
+*   Poisson meta-analysis to model incidence rate ratios (IRR)
+
+
+### Notation
+
+- $y_i$: observed effect size for study $i$.
+- $k$: number of studies.
+- $\mu$: overall mean effect on the analysis scale (SMD, lnRR, log-OR, log-IRR).
+- $\tau^2$: between-study (random-effects) variance.
+- $\mathbf{V}$: block-diagonal sampling-error variance–covariance matrix.
+- $\sigma_T, \sigma_C$: within-group standard deviations for treatment and control (SMD/lnRR).
+- $\mu_C$: control-group mean on the original scale (SMD/lnRR).
+- $n_T, n_C$: sample sizes in treatment and control groups (SMD/lnRR/OR).
+- $t_T, t_C$: exposure times (person-time) for treatment and control groups (IRR).
+
+\
+
+
+### Model specification
+
+For all effect size measures we will assess the random effect meta-analysis model:
+
+
+$$y_{i} = \mu + u_{i} +  e_{i}  \tag{1}$$
+$$u \sim N(0,\tau^2)$$
+$$e \sim N(0,V)$$
+
+
+Additionally, for non continuous effect size measures (OR and IRR), we will assess Binomial-Normal model and Poisson-Normal models.
+
+
+### Pilot parameter settings
+
+
+| Measure | $\mu$         | $\tau^2$ | $\sigma_T$ | $\sigma_C$ | $\mu_C$ | $n_T$ | $n_C$ | $t_T$ | $t_C$ |
+|:--------|:--------------|:--------:|:----------:|:----------:|:-------:|:-----:|:-----:|:-----:|:-----:|
+| SMD     | $0.3$         | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |
+| lnRR    | $\log(1.3)$   | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |
+| OR      | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     | $50$  | $50$  |  -    |  -    |
+| IRR     | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     |  -    |  -    | $50$  | $50$  |
+
+
+
+### Set up glmmTMB
+
+<!-- # build package from branch: https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc -->
+<!-- # NOTE: remove glmmTMB (if installed) and reload R  -->
+<!-- #remotes::install_github("coraliewilliams/glmmTMB", ref="equalto_covstruc", subdir="glmmTMB") -->
+
+
+```{r}
+# load glmmTMB from forked repo branch 
+library(glmmTMB)
+
+# check the available covstruc (you should see equalto in number 13)
+(glmmTMB:::.valid_covstruct)
+
+```
+
+
+
+
+
+
+## Modelling standardised mean differences (SMD)
+
+Load simulated dataset:
+
+```{r}
+# load simulated SMD data 
+load(here("data", "dat_smd.RDATA"))
+dat.smd <- out_smd
+```
+
+
+Fit random effects meta-analysis with metafor and glmmTMB:
+
+```{r}
+# fit metafor model
+m.smd.rma <- rma(yi, vi, data=dat.smd, control=list(REMLf=FALSE))
+
+# fit glmmTMB model
+dat.smd$g <- 1
+dat.smd$id <- as.factor(1:nrow(dat.smd))
+V <- diag(dat.smd$vi, nrow = nrow(dat.smd))
+m.smd.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
+                    REML = TRUE,
+                    data=dat.smd)
+```
+
+Extract model estimates:
+
+```{r, echo=FALSE}
+# metafor output
+res.smd_rma <- data.frame(f = "rma.uni", 
+                        logLik = logLik(m.smd.rma)[1],
+                        df = attr(logLik(m.smd.rma), "df"), 
+                        est = as.numeric(m.smd.rma$b), 
+                        se = m.smd.rma$se, 
+                        pvalue = m.smd.rma$pval,
+                        tau2 = m.smd.rma$tau2
+                        )
+
+# glmmTMB output 
+fix.tmb <- as.data.frame(summary(m.smd.tmb)$coefficients$cond)
+res.smd_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(m.smd.tmb)[1],
+                        df = attr(logLik(m.smd.tmb), "df"), 
+                        est = fix.tmb$Estimate, 
+                        se = fix.tmb$`Std. Error`, 
+                        pvalue = fix.tmb$`Pr(>|z|)`,
+                        tau2 = sigma(m.smd.tmb)^2
+                        )
+  
+kable(rbind(res.smd_rma, res.smd_tmb))
+```
+
+
+## Modelling log response ratios (lnRR)
+
+Load simulated dataset:
+
+```{r}
+# load simulated lnRR data 
+load(here("data", "dat_lnrr.RDATA"))
+dat.lnrr <- out_lnrr
+```
+
+
+Fit random effects meta-analysis with metafor and glmmTMB:
+
+```{r}
+# fit metafor model
+m.lnrr.rma <- rma(yi, vi, data=dat.lnrr)
+
+# fit glmmTMB model
+dat.lnrr$g <- 1
+dat.lnrr$id <- as.factor(1:nrow(dat.lnrr))
+V <- diag(dat.lnrr$vi, nrow = nrow(dat.lnrr))
+m.lnrr.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
+                    REML = TRUE,
+                    data=dat.lnrr)
+```
+
+Extract model estimates:
+
+```{r}
+# metafor output
+res.lnrr_rma <- data.frame(f = "rma.uni", 
+                        logLik = logLik(m.lnrr.rma)[1],
+                        df = attr(logLik(m.lnrr.rma), "df"), 
+                        est = as.numeric(m.lnrr.rma$b), 
+                        se = m.lnrr.rma$se, 
+                        pvalue = m.lnrr.rma$pval,
+                        tau2 = m.lnrr.rma$tau2
+                        )
+
+# glmmTMB output 
+fix.tmb <- as.data.frame(summary(m.lnrr.tmb)$coefficients$cond)
+res.lnrr_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(m.lnrr.tmb)[1],
+                        df = attr(logLik(m.lnrr.tmb), "df"), 
+                        est = fix.tmb$Estimate, 
+                        se = fix.tmb$`Std. Error`, 
+                        pvalue = fix.tmb$`Pr(>|z|)`,
+                        tau2 = sigma(m.lnrr.tmb)^2
+                        )
+  
+kable(rbind(res.lnrr_rma, res.lnrr_tmb))
+```
+
+
+
+## Modelling log odds ratios (OR)
+
+Set up simulated dataset:
+
+```{r}
+# load simulated OR data (with between study heterogeneity tau^2 = 0.16)
+load(here("data", "dat_OR.RDATA"))
+dat.or <- out_or
+
+```
+
+### Normal-Normal model
+
+Fit random effects meta-analysis with metafor:
+
+```{r}
+# fit metafor model
+m.or.rma <- rma(yi,
+                vi,
+                method="REML",
+                data=dat.or)
+
+```
+
+
+Fit model in glmmTMB:
+
+```{r}
+# fit glmmTMB model
+dat.or$g <- 1
+dat.or$id <- as.factor(1:nrow(dat.or))
+V <- diag(dat.or$vi, nrow = nrow(dat.or))
+
+m.or.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
+                    REML = TRUE,
+                    data=dat.or)
+
+```
+
+
+
+Extract model estimates:
+
+```{r}
+# metafor ouput
+res.or_rma <- data.frame(f = "rma.uni", 
+                        logLik = logLik(m.or.rma)[1],
+                        df = attr(logLik(m.or.rma), "df"), 
+                        est = as.numeric(m.or.rma$b), 
+                        se = m.or.rma$se, 
+                        pvalue = m.or.rma$pval,
+                        tau2 = m.or.rma$tau2
+                        )
+
+# glmmTMB output 
+fix.tmb <- as.data.frame(summary(m.or.tmb)$coefficients$cond)
+res.or_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(m.or.tmb)[1],
+                        df = attr(logLik(m.or.tmb), "df"), 
+                        est = fix.tmb$Estimate, 
+                        se = fix.tmb$`Std. Error`, 
+                        pvalue = fix.tmb$`Pr(>|z|)`,
+                        tau2 = sigma(m.or.tmb)^2
+                        )
+  
+kable(rbind(res.or_rma, res.or_tmb))
+```
+
+
+
+
+
+### Binomial-Normal model
+
+Fit model with metafor:
+
+```{r}
+m2.or.rma <- rma.glmm(measure="OR", 
+                      ai=a, bi=b,
+                      ci=c, di=d,
+                      data = dat.or,
+                      model = "UM.RS", #unconditional random effects
+                      nAGQ = 1, #specify Laplace approximation (for comparison)
+                      method = "ML", #default
+                      drop00 = F)
+```
+
+Fit models with glmmTMB, first need to set up long data format:
+
+```{r}
+# set up long data format
+n <- c(dat.or$a+dat.or$b, dat.or$c+dat.or$d)
+event <- c(dat.or$a, dat.or$c)
+study <- rep(1:nrow(dat.or), each=2)
+obs <- 1:length(n)
+treat <- c(rep(1, nrow(dat.or)), rep(0, nrow(dat.or)))
+control <- 1 - treat
+treat12 <- treat - 0.5
+dat.or_long <- data.frame(study, obs, n, event, treat, control, treat12)
+
+
+# fit two binomial models with glmmTMB
+m2.or.tmb <- glmmTMB(cbind(event,n-event) ~ factor(treat) + (treat12-1|study) + (1|study), 
+                         family = binomial(link = "logit"), 
+                         REML = FALSE,
+                         data=dat.or_long)
+
+
+m3.or.tmb <- glmmTMB(cbind(event,n-event) ~ factor(treat) + (control+treat-1|study), 
+                         family = binomial(link = "logit"), 
+                         REML = FALSE,
+                         data=dat.or_long)
+
+```
+
+
+
+
+
+Get estimates to compare all models:
+
+
+```{r}
+res2.or_rma <- data.frame(f = "rma.glmm", 
+                        logLik = logLik(m2.or.rma)[1],
+                        df = attr(logLik(m2.or.rma), "df"), 
+                        est = as.numeric(m2.or.rma$b), 
+                        se = m2.or.rma$se, 
+                        pvalue = m2.or.rma$pval,
+                        tau2 = m2.or.rma$tau2
+                        )
+
+res2.or_tmb <- data.frame(f = "glmmTMB.binomial.1", 
+                        logLik = logLik(m2.or.tmb)[1],
+                        df = attr(logLik(m2.or.tmb), "df"), 
+                        est = as.numeric(unlist(fixef(m2.or.tmb))[2]), 
+                        se = as.numeric(sqrt(vcov(m2.or.tmb)$cond[2,2])), 
+                        pvalue = summary(m2.or.tmb)$coefficients$cond[2, "Pr(>|z|)"],
+                        tau2 = (VarCorr(m2.or.tmb)$cond$study)[1]
+                        )
+
+res3.or_tmb <- data.frame(f = "glmmTMB.binomial.2", 
+                        logLik = logLik(m3.or.tmb)[1],
+                        df = attr(logLik(m3.or.tmb), "df"), 
+                        est = as.numeric(unlist(fixef(m3.or.tmb))[2]), 
+                        se = as.numeric(sqrt(vcov(m3.or.tmb)$cond[2,2])), 
+                        pvalue = summary(m3.or.tmb)$coefficients$cond[2, "Pr(>|z|)"],
+                        tau2 = VarCorr(m3.or.tmb)$cond$study[1,1]
+                        +VarCorr(m3.or.tmb)$cond$study[2,2]
+                        -2*VarCorr(m3.or.tmb)$cond$study[1,2]
+                      )
+
+
+kable(rbind(res.or_rma, res.or_tmb, res2.or_rma, res2.or_tmb, res3.or_tmb))
+
+
+```
+
+
+
+A few notes:
+
+-    `rma.uni` and `glmmTMB` models in the table are using REML (the binomial-normal models uses ML, as i wanted to compare to metafor).
+
+-    the estimates for $\tau^2$ are different for the binomial-normal models... need to check more closely these models and output, I might have mixed up something when getting the long dataset format.
+
+
+## Modelling log incidence ratios (IRR)
+
+
+Load simulated dataset:
+
+```{r}
+# load simulated IRR data (with between study heterogeneity tau^2 = XXX)
+load(here("data", "dat_IRR.RDATA"))
+dat.irr <- out_irr
+```
+
+### Normal-normal model
+
+Fit random effects meta-analysis with metafor and glmmTMB:
+
+```{r}
+# fit metafor model
+m.irr.rma <- rma(yi, vi, data=dat.irr)
+
+# fit glmmTMB model
+dat.irr$g <- 1
+dat.irr$id <- as.factor(1:nrow(dat.irr))
+V <- diag(dat.irr$vi, nrow = nrow(dat.irr))
+m.irr.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
+                    REML = TRUE,
+                    data=dat.irr)
+```
+
+
+Extract estimates from model:
+
+```{r}
+# fit metafor model
+res.irr_rma <- data.frame(f = "rma.uni", 
+                        logLik = logLik(m.irr.rma)[1],
+                        df = attr(logLik(m.irr.rma), "df"), 
+                        est = as.numeric(m.irr.rma$b), 
+                        se = m.irr.rma$se, 
+                        pvalue = m.irr.rma$pval,
+                        tau2 = m.irr.rma$tau2
+                        )
+
+# glmmTMB output 
+fix.tmb <- as.data.frame(summary(m.irr.tmb)$coefficients$cond)
+res.irr_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(m.irr.tmb)[1],
+                        df = attr(logLik(m.irr.tmb), "df"), 
+                        est = fix.tmb$Estimate, 
+                        se = fix.tmb$`Std. Error`, 
+                        pvalue = fix.tmb$`Pr(>|z|)`,
+                        tau2 = sigma(m.irr.tmb)^2
+                        )
+  
+kable(rbind(res.irr_rma, res.irr_tmb))
+```
+
+
+
+### Poisson-Normal model
+
+Fitting with metafor:
+
+```{r}
+m2.irr.rma <- rma.glmm(measure="IRR",
+                       x1i = yT, t1i = t_T,
+                       x2i = yC, t2i = t_C,
+                       data = dat.irr,
+                       #coding = 0,
+                       nAGQ=1, #specifies Laplace approximation 
+                       method="ML",
+                       model="UM.RS",
+                       drop00 = F) ## drop studies with no cases/events
+```
+
+Fitting with glmmTMB:
+
+```{r}
+# set up long data format
+dat.irr.long <- data.frame(
+  study     = rep(dat.irr$study, times = 2),
+  trt       = rep(c(-0.5, 0.5), each = nrow(dat.irr)),  # -0.5 = C, 0.5 = T => to match metafor contrast coding
+  t         = c(dat.irr$t_C, dat.irr$t_T),
+  y         = c(dat.irr$yC,  dat.irr$yT),
+  lambda    = c(dat.irr$lambda_C, dat.irr$lambda_T)
+)
+  
+
+# glmmTMB poisson model
+m2.irr.tmb <- glmmTMB(y ~ factor(trt) + offset(log(t)) + (0 + trt | study) + (1|study),
+                         family = poisson(link = "log"),
+                         REML = FALSE, # for comparison with metafor
+                         data=dat.irr.long)
+
+```
+
+Get models output:
+
+```{r}
+# metafor ouput
+res2.irr_rma <- data.frame(f = "rma.glmm", 
+                        logLik = logLik(m2.irr.rma)[1],
+                        df = attr(logLik(m2.irr.rma), "df"), 
+                        est = as.numeric(m2.irr.rma$b), 
+                        se = m2.irr.rma$se, 
+                        pvalue = m2.irr.rma$pval,
+                        tau2 = m2.irr.rma$tau2
+                        )
+
+# glmmTMB output 
+fix.tmb <- as.data.frame(summary(m2.irr.tmb)$coefficients$cond)
+
+res2.irr_tmb <- data.frame(f = "glmmTMB.poisson", 
+                        logLik = logLik(m2.irr.tmb)[1],
+                        df = attr(logLik(m2.irr.tmb), "df"), 
+                        est = fix.tmb$Estimate[2], 
+                        se = fix.tmb$`Std. Error`[2], 
+                        pvalue = fix.tmb$`Pr(>|z|)`[2],
+                        tau2 = VarCorr(m2.irr.tmb)$cond$study[1]
+                        )
+  
+kable(rbind(res2.irr_rma, res2.irr_tmb))
+
+```
+
+Notes:
+
+-   If i don't use the 1/2 contrast coding for the treatment (default in `metafor`), then the $\tau^2$ estimates are not identical across models. 
+
+
+## Extra - example case studies
+
+Here are some examples of other models I'll showcase in this project using published/available meta-analysis datasets.
+
+
+### (1) Case study: Bivariate meta-analysis
+
+Here I use the dataset of meta-analysis on the effectiveness of the BCG vaccine against tuberculosis (Colditz et al., 1994), which is available within the `metafor` package. 
+
+```{r}
+data(dat.bcg)
+dat_long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+levels(dat_long$group) <- c("exp", "con")
+dat_long$group <- relevel(dat_long$group, ref="con")
+dat_long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat_long)
+dat_long$obs <- as.factor(1:nrow(dat_long))
+dat_long$g <- 1
+```
+
+Fit bivariate meta-analysis with metafor and glmmTMB:
+
+```{r}
+# fit with metafor
+bv_rma <- rma.mv(yi, vi, mods = ~ group, 
+                 random = ~ group | study, 
+                 struct = "UN",
+                 method = "REML",
+                 data=dat_long)
+
+# fit with glmmTMB
+VCV <- diag(dat_long$vi) #variance covariance matrix for sampling errors
+bv_TMB <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
+                  dispformula = ~ 0, #set residual variance to zero
+                  REML = "TRUE",
+                  data=dat_long)
+
+```
+
+Get models output:
+
+```{r}
+
+# metafor output
+res.bv_rma <- with(bv_rma, data.frame(f = "rma.mv",
+                                      logLik = logLik(bv_rma),
+                                      df = attr(logLik(bv_rma), "df"),
+                                      est.b0 = as.numeric(b[1]),
+                                      se.b0 = se[1],
+                                      est.b1 = as.numeric(b[2]),
+                                      se.b1 = se[2],
+                                      sigma2.con = tau2[1],
+                                      sigma2.exp = tau2[2],
+                                      rho = rho))
+
+# glmmTMB output
+vc <- VarCorr(bv_TMB) 
+var_con <- vc$cond$study["groupcon", "groupcon"]
+var_exp <- vc$cond$study["groupexp", "groupexp"]
+rho.tmb <- vc$cond$study["groupcon", "groupexp"] / sqrt(var_con * var_exp)
+
+res.bv_tmb <- data.frame(f = "glmmTMB", 
+                      logLik = logLik(bv_TMB)[1],
+                      df = attr(logLik(bv_TMB), "df"),                         
+                      est.b0 = as.numeric(unlist(fixef(bv_TMB))[[1]]), 
+                      se.b0 = as.numeric(sqrt(vcov(bv_TMB)[[1]]))[1], 
+                      est.b1 = as.numeric(unlist(fixef(bv_TMB))[[2]]), 
+                      se.b1 = as.numeric(sqrt(vcov(bv_TMB)[[1]]))[4], 
+                      sigma2.con = var_con, 
+                      sigma2.exp = var_exp, 
+                      rho = rho.tmb)
+
+  
+kable(rbind(res.bv_rma, res.bv_tmb))
+
+```
+
+
+
+### (2) Case study: Location-scale meta-analysis 
+
+Again using the BCG dataset, using a dichotomous variable called `rand` (binary variable for either the study was randomised or not).
+
+
+```{r}
+dat.ls <- escalc(measure="RR", ai=tpos,bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat.ls$rand <- ifelse(dat.ls$alloc == "random", 1, 0) # get randomisation variable (from alloc variable)
+
+```
+
+Fit location-scale meta-analysis in metafor and glmmTMB:
+
+```{r}
+# fit with metafor
+m.ls.rma <- rma(yi,
+                vi,
+                mods= ~ rand,
+                scale = ~ rand,
+                method = "REML",
+                data=dat.ls)
+
+
+# data set up for glmmTMB
+dat.ls$g <- 1
+dat.ls$id <- as.factor(1:nrow(dat.ls))
+V <- diag(dat.ls$vi, nrow = nrow(dat.ls)) # variance covariance matrix for sampling errors
+
+# fit with glmmTMB
+m.ls.tmb  <- glmmTMB(yi ~ rand + equalto(0 + id|g,V), ##the map variable "id" must be a factor 
+                     dispformula = ~ rand,
+                     REML = TRUE,
+                     data = dat.ls)
+```
+
+Get model outputs:
+
+```{r}
+
+# metafor output
+res.ls_rma <- with(m.ls.rma,
+                  data.frame(f = "rma", 
+                        logLik = logLik(m.ls.rma ),
+                        df = attr(logLik(m.ls.rma ), "df"), 
+                        loc.int.est = as.numeric(b[1]), 
+                        loc.int.se = se[1], 
+                        loc.rand.est = as.numeric(b[2]), 
+                        loc.rand.se = se[2], 
+                        scale.int.est = m.ls.rma$alpha[1],
+                        scale.int.se = m.ls.rma$se.alpha[1],
+                        scale.rand.est = m.ls.rma$alpha[2],
+                        scale.rand.se = m.ls.rma$se.alpha[2]
+                        ))
+
+# glmmTMB output
+loc.tmb <- as.data.frame(summary(m.ls.tmb)$coefficients$cond)
+scale.tmb <- as.data.frame(summary(m.ls.tmb)$coefficients$disp)
+
+res.ls_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(m.ls.tmb )[1],
+                        df = attr(logLik(m.ls.tmb), "df"), 
+                        loc.int.est = loc.tmb$Estimate[1], 
+                        loc.int.se = loc.tmb$`Std. Error`[1], 
+                        loc.rand.est = loc.tmb$Estimate[2], 
+                        loc.rand.se = loc.tmb$`Std. Error`[2], 
+                        scale.int.est = scale.tmb$Estimate[1]*2,
+                        scale.int.se = scale.tmb$`Std. Error`[1]*2,
+                        scale.rand.est = scale.tmb$Estimate[2]*2,
+                        scale.rand.se = scale.tmb$`Std. Error`[2]*2
+                        )
+  
+  
+kable(rbind(res.ls_rma, res.ls_tmb))
+
+```
+
+
+### (3) Case study: Phylogenetic meta-analysis with dependent effect sizes
+
+Here I demonstrate how to fit a phylogenetic meta-analysis with dependent effect sizes with glmmTMB using a simulated dataset.
+
+
+$$y_{ijk} = \mu + u_{ij} + s_i + n_k + p_k + e_{ij}$$ 
+$$u \sim N(0,\sigma^2_{u}I_u)$$ 
+$$s \sim N(0, \sigma^2_sI_s)$$ 
+$$n \sim N(0, \sigma^2_nI_n)$$ 
+$$p \sim N(0, \sigma^2_p\textbf{A})$$ 
+$$e \sim N(0,V)$$
+
+where $\sigma^2_s$ the study level variance component, $\sigma^2_u$ the estimate level variance component, 
+$\sigma^2_n$ is the variance of the species level random effect, $\sigma^2_p$ is the variance of phylogenetic random effect, $\textbf{V*}$ the block diagonal variance-covariance matrix of the sampling error with effect sizes from the same study, and $\textbf{A}$ is the phylogenetic correlation matrix based on a Brownian model of evolution.
+
+
+
+```{r}
+# Load some phylo dataset and matrix
+load(here("data", "phylo_simulated_data.RData"))
+```
+
+
+Fit model using metafor:
+
+```{r}
+phylo_rma_fit <- rma.mv(yi,
+                   V,
+                   random = list(~ 1| id, ~ 1 | study, ~ 1 | species, ~ 1 | species.phylo),
+                   R = list(species.phylo=P),
+                   test = "t",
+                   dfs = "contain",
+                   data = dat)
+```
+
+
+Fit model using glmmTMB:
+
+```{r}
+phylo_tmb_fit <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V) + (1|study) + (1|species) + propto(0 + species|g,P),
+                       data=dat,
+                       REML=T)
+```
+
+
+Compare output of metafor and glmmTMB:
+
+```{r}
+# metafor output
+phylo_rma <- with(phylo_rma_fit,
+                  data.frame(f = "rma.mv", 
+                        logLik = logLik(phylo_rma_fit),
+                        df = attr(logLik(phylo_rma_fit), "df"), 
+                        est = as.numeric(b), 
+                        se = se, 
+                        sigma.u = sqrt(sigma2[1]), 
+                        sigma.s = sqrt(sigma2[2]),
+                        sigma.n = sqrt(sigma2[3]),
+                        sigma.p = sqrt(sigma2[4])
+                        ))
+
+# glmmTMB output
+re_tmb <- as.data.frame(confint(phylo_tmb_fit, parm = "theta_"))
+fix_tmb <- as.data.frame(summary(phylo_tmb_fit)$coefficients$cond)
+
+phylo_tmb <- data.frame(f = "glmmTMB", 
+                        logLik = logLik(phylo_tmb_fit )[1],
+                        df = attr(logLik(phylo_tmb_fit), "df"), 
+                        est = fix_tmb$Estimate, 
+                        se = fix_tmb$`Std. Error`, 
+                        sigma.u = sigma(phylo_tmb_fit), 
+                        sigma.s = re_tmb$Estimate[1],
+                        sigma.n = re_tmb$Estimate[2],
+                        sigma.p = re_tmb$Estimate[3] 
+                        )
+  
+  
+kable(rbind(phylo_rma, phylo_tmb))
+```
+
+
+
+
+
+
+## References
+
+    Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M., & Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. R Journal, 9(2), 378–400. https://doi.org/10.32614/RJ-2017-066
+
+    Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). Efficacy of BCG Vaccine in the Prevention of Tuberculosis: Meta-analysis of the Published Literature. JAMA, 271(9), 698–702. https://doi.org/10.1001/jama.1994.03510330076038
+
+    Jackson, D., Law, M., Stijnen, T., Viechtbauer, W., & White, I. R. (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Statistics in Medicine, 37(7), 1059–1085. https://doi.org/10.1002/sim.7588
+
+    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. Journal of Statistical Software, 36(3), 1-48. https://cran.r-project.org/web/packages/metafor/index.html
+
+

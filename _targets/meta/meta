@@ -1,0 +1,12 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+param_grid|stem||5a9dc16908ea1d95|2c530c1562a7fbd1|-1095533255||t20390.2732938228s||0|file|local|vector|||0.44||dataPARAM_GRID_SMD.csv does not exist in current working directory CUsersz5394590OneDrive  UNSWDocumentsProjectsequalto_sim_study.
+time_fit|function|cc7160e008c7f7fc
+simulate_or|function|7a1a49103094e296
+simulate_lnrr|function|6f78f34050284743
+simulate_irr|function|c106c57be0a96e51
+simulate_smd|function|50744aa64d0ebca4
+fit_rma_uni|function|604c188ea8034f7e
+fit_IRR_models|function|94044fd21d1b9804
+fit_OR_models|function|cf33c9d5c6c6a981
+fit_glmmTMB_RE|function|8ce63c1c589944a3
+sim_func|function|e2db42f9b6a651ed

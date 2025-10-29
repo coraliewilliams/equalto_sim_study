@@ -113,7 +113,7 @@ make_param_grid <- function(reps = REPS, k = K, measures = c("SMD", "lnRR", "OR"
     dplyr::arrange(measure, tau2, mu_label, baseline_label, replicate) |>
     dplyr::mutate(
       param_id = dplyr::row_number(),
-      seed = as.integer((param_id * 104729L + 472882049L) %% .Machine$integer.max),
+      seed = as.integer((param_id * 10L + 4728L) %% .Machine$integer.max),
       scenario = dplyr::case_when(
         is.na(baseline_label) ~ sprintf("%s_tau2=%.2f_%s", measure, tau2, mu_label),
         TRUE ~ sprintf("%s_tau2=%.2f_%s_%s", measure, tau2, mu_label, baseline_label)
@@ -123,15 +123,33 @@ make_param_grid <- function(reps = REPS, k = K, measures = c("SMD", "lnRR", "OR"
 }
 
 
-PARAM_GRID <- make_param_grid()
+
+# param grid for SMD 
+PARAM_GRID_SMD <- make_param_grid(measures="SMD")
+write.csv(PARAM_GRID_SMD, "data/param_grid_smd.csv")
+
+# param grid for lnRR
+PARAM_GRID_LNRR<- make_param_grid(measures="lnRR")
+write.csv(PARAM_GRID_SMD, "data/param_grid_lnRR.csv")
+
+# param grid for OR
+PARAM_GRID_OR <- make_param_grid(measures="OR")
+write.csv(PARAM_GRID_SMD, "data/param_grid_OR.csv")
+
+# param grid for IRR
+PARAM_GRID_IRR <- make_param_grid(measures="OR")
+write.csv(PARAM_GRID_SMD, "data/param_grid_OR.csv")
 
 
 
-#### expect 12 scenarios/conditions --- for SMD, lnRR
-# 3 tau^2 x 2 mu x 2 effect size measures = 12 conditions
+
+
+
+#### expect 12 scenarios/conditions --- for each SMD, lnRR
+# 3 tau^2 x 2 mu = 6 conditions
 
 #### expect 24 scenarios/conditions ----- for OR, IRR
-# 3 tau^2 x 2 mu x 2 baseline group mean x 2 effect size measures = 24 conditions
+# 3 tau^2 x 2 mu x 2 baseline group mean = 12 conditions
 
 ## total sims
 # If REP=1000 ===> 12*1000 + 24*1000 = 3600

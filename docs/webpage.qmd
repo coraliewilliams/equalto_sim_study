@@ -6,18 +6,20 @@ format:
     toc: true
     toc-location: left
     toc-depth: 3
-    theme: default
+    theme: cosmo
+    toc-title: "**Table of contents**"
     embed-resources: true
     code-fold: show
     code-tools: true
     number-sections: true
     number-depth: 2
+    colorlinks: true
     footnote-location: margin
 ---
 
 This webpage is supporting material to the paper "*Meta-analysis with `glmmTMB` R package*".
 
-`equalto` covariance structure
+We show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which allows to specify the sampling error variance-covariance (VCV) matrix.
 
 ### Contact {#contact}
 
@@ -41,7 +43,7 @@ $\text{VCV}$ represents a block-diagonal variance-covariance matrix including kn
 
 ### Load `glmmTMB` package
 
-Currently, `equalto` is not on CRAN (but soon it will be available\*\*\*), so you need to install `glmmTMB` from the [following branch](https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc):
+Currently, `equalto` is not on CRAN (yet!), so you need to install `glmmTMB` from the [following branch](https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc):
 
 ::: callout-note
 **Important note:** If you have `glmmTMB` already installed, you will need to uninstall it first.
@@ -73,6 +75,9 @@ glmmTMB:::.valid_covstruct
 Now, let's simulate some data following the structure of the above multilevel meta-analysis.
 
 ```{r}
+#| output: false
+#| warnings: false
+
 # load libraries
 suppressPackageStartupMessages({
   library(MASS)
@@ -81,8 +86,8 @@ suppressPackageStartupMessages({
 })
 
 # set up indices
-k.studies <- 50 # number of studies
-k.per.study <- 10 # number of effect sizes per study
+k.studies <- 10 # number of studies
+k.per.study <- 3 # number of effect sizes per study
 study <- rep(seq_len(k.studies), times=k.per.study) # study id 
 k <- length(study) # total number of effect sizes
 id <- seq_len(k) # id of between study effect sizes 
@@ -135,7 +140,7 @@ dat <- data.frame(y = y,
 )
 ```
 
-### Run model
+### Fit `glmmTMB` model
 
 Before we fit the model we need to obtain the within-study error variance-covariance matrix (which accounts for within-study correlation) assuming a constant correlation of $\rho=0.5$. The correlation between effect sizes from different studies is assumed to be zero.
 
@@ -161,7 +166,10 @@ fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
                        data=dat,
                        REML=T)
 
+summary(fit.equalto)
 ```
+
+### Fit `metafor` model
 
 Let's compare with the `metafor` package `rma.mv` function that fits a multilevel model with random effects. Here the model is specified with two random effects: `(1|study)` corresponding to the among-study ($u_i$) and `(1|id)` corresponding to the within-study ($m_{ij}$) random effects. The sampling errors $e_{ij}$ VCV matrix is specified using the `V` argument.
 
@@ -170,11 +178,11 @@ Let's compare with the `metafor` package `rma.mv` function that fits a multileve
 fit.metafor <- rma.mv(yi = y, 
                       V = VCV,
                       random = list(~1 | study, ~1 | id),
-                      test = "t",
-                      dfs = "contain",
+                      #test = "t", dfs = "contain",
+                      control=list(REMLf=FALSE),
                       data = dat) #uses REML by default
 
-fit.metafor
+summary(fit.metafor)
 ```
 
 Then, we extract the model results for each model and compare outputs:
@@ -189,7 +197,7 @@ metafor <- data.frame(model = "metafor",
                       sigma.u = sqrt(fit.metafor$sigma2[1]), ## among study variance
                       sigma.m = sqrt(fit.metafor$sigma2[2])) ## within study variance
 
-equalto <- data.frame(model = "equalto",
+equalto <- data.frame(model = "glmmTMB",
                       est = unlist(fixef(fit.equalto))[[1]],
                       se = as.numeric(sqrt(vcov(fit.equalto)[[1]])),
                       zval = summary(fit.equalto)$coefficients$cond[3],
