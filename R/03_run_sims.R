@@ -20,6 +20,7 @@ suppressPackageStartupMessages({
   library(glmmTMB)
   library(data.table)
   library(progressr)
+  library(R.utils)
 })
 
 
@@ -30,7 +31,7 @@ source("R/02_functions.R")
 # ---- parallel setup ----
 Sys.setenv(OPENBLAS_NUM_THREADS = "1", MKL_NUM_THREADS = "1", OMP_NUM_THREADS = "1")
 plan(multisession, workers = max(1, future::availableCores() - 1)) ##use all cores but 1
-handlers("rstudio", global = TRUE)
+handlers("rstudio")
 options(progressr.enable = TRUE)
 options(future.globals.maxSize = 2 * 1024^3) 
 
@@ -223,7 +224,7 @@ fit_IRR_models <- function(dat_irr) {
 
 # ---- Sim function --------------------------------------------------------------
 
-sim_func <- function(row_df, dat_dir) {
+sim_func <- function(row_df, data_dir, res_dir) {
   
   # parse parameters
   par <- row_df %>%
@@ -253,8 +254,10 @@ sim_func <- function(row_df, dat_dir) {
   )
   
   # save sim dataset 
-  dat_path <- file.path(dat_dir, sprintf("simdat_%05d.rds", par$param_id))
-  saveRDS(dat, dat_path, compress = FALSE)
+  data_file <- file.path(data_dir, sprintf("simdat_%05d.rds", par$param_id))
+  tmpd <- paste0(data_file, ".tmp")
+  saveRDS(dat, tmpd, compress = FALSE)
+  file.rename(tmpd, data_file)
   
   # fit models
   fits <- list(
@@ -266,60 +269,87 @@ sim_func <- function(row_df, dat_dir) {
   fits <- fits[!vapply(fits, is.null, logical(1))]
   
   # combine model results + annotate
-  out <- data.table::rbindlist(fits, use.names = TRUE, fill = TRUE)
-  out$scenario  <- par$scenario
-  out$replicate <- par$replicate
-  out$param_id  <- par$param_id
-  out$measure   <- par$measure
-  out$dat_file  <- dat_path
+  res <- data.table::rbindlist(fits, use.names = TRUE, fill = TRUE)
+  res$scenario  <- par$scenario
+  res$replicate <- par$replicate
+  res$param_id  <- par$param_id
+  res$measure   <- par$measure
+  res$dat_file  <- data_file
   
-  out
+  res_file <- file.path(res_dir, sprintf("res_%05d.rds", par$param_id))
+  tmpr <- paste0(res_file, ".tmp")
+  saveRDS(res, tmpr, compress = FALSE)
+  file.rename(tmpr, res_file)
+  
+  invisible(NULL)
 }
 
 
 # ## manual testing
 # row_df <- example_row
-#  
+# data_dir = "results/raw/SMD/data"
+# res_dir = "results/raw/SMD/res"
+# 
 # ### test one row
-# example_row <- PARAM_GRID[200, , drop = FALSE]
-# example_res <- sim_func(example_row)
+# example_row <- PARAM_GRID_SMD[1716, , drop = FALSE]
+# example_res <- sim_func(example_row, data_dir, res_dir)
 # print(example_res)
 
 
 
 
-# ---- Fucntion sims in parallel ---------------------
+# ---- Fucntions to run sims in parallel ---------------------
 
+chunk_indices_by_count <- function(n, k_chunks) {
+  split(seq_len(n), as.integer(cut(seq_len(n), breaks = k_chunks, labels = FALSE)))
+}
+
+run_chunk_df <- function(chunk_df, data_dir, res_dir, timeout_sec = 300L) {
+  n <- nrow(chunk_df)
+  for (i in seq_len(n)) {
+    row_df <- chunk_df[i, , drop = FALSE]
+    try({
+      R.utils::withTimeout(
+        sim_func(row_df, data_dir = data_dir, res_dir = res_dir),
+        timeout = timeout_sec, onTimeout = "error"
+      )
+    }, silent = TRUE)
+    if ((i %% 200L) == 0L) gc(FALSE)
+  }
+  invisible(NULL)  # nothing to return
+}
+
+
+## single runner (parallel inside, sequential across grids)
 run_one_grid <- function(PARAM_GRID, label, k_per_worker = 8L,
-                         base_dat_dir = "results/raw/dat",
-                         base_results_dir = "results/raw/results") {
+                         base_dir = "results/raw",
+                         timeout_sec = 300L) {
   
-  # check folders exist
-  dat_dir     <- file.path(base_dat_dir, label)
-  results_dir <- file.path(base_results_dir)
-  if (!dir.exists(dat_dir))     stop("Missing data dir: ", dat_dir)
-  if (!dir.exists(results_dir)) stop("Missing results dir: ", results_dir)
+  data_dir <- file.path(base_dir, label, "data")
+  res_dir  <- file.path(base_dir, label, "res")
+  if (!dir.exists(data_dir)) stop("Missing data dir: ", data_dir)
+  if (!dir.exists(res_dir))  stop("Missing res dir: ", res_dir)
   
-  # chunking
   n <- nrow(PARAM_GRID)
   W <- future::nbrOfWorkers()
-  chunk_list <- chunk_indices_by_count(n, k_chunks = max(1L, W * k_per_worker))
+  k_chunks  <- max(1L, min(n, W * k_per_worker))
+  idx_split <- chunk_indices_by_count(n, k_chunks)
+  chunk_dfs <- lapply(idx_split, function(ix) PARAM_GRID[ix, , drop = FALSE])
   
-  # parallel map
-  pkg_needed <- c("glmmTMB", "metafor", "dplyr", "tibble", "data.table")
-  progressr::with_progress({
-    res_chunks <- furrr::future_map(
-      chunk_list,
-      ~ run_chunk(PARAM_GRID, .x, dat_dir = dat_dir),
-      .progress = TRUE,
-      .options  = furrr::furrr_options(seed = TRUE, packages = pkg_needed, globals = TRUE)
+  pkg_needed <- c("glmmTMB", "metafor", "dplyr", "tibble", "data.table", "R.utils")
+  
+  invisible(
+    furrr::future_map(
+      chunk_dfs,
+      ~ run_chunk_df(.x, data_dir = data_dir, res_dir = res_dir, timeout_sec = timeout_sec),
+      .options = furrr::furrr_options(
+        seed       = TRUE,
+        packages   = pkg_needed,
+        globals    = TRUE,
+        stdout     = FALSE
+      )
     )
-    
-    # bind + save all results in one csv
-    results <- data.table::rbindlist(res_chunks, use.names = TRUE, fill = TRUE)
-    out_csv <- file.path(results_dir, sprintf("sim_results_%s.csv", label))
-    data.table::fwrite(results, out_csv)
-  })
+  )
 }
 
 
@@ -332,9 +362,8 @@ PARAM_GRID_IRR <- readr::read_csv("data/param_grid_IRR.csv")
 
 
 # ---- Run sims and save output -----------------------------------------------
-run_one_grid(PARAM_GRID_SMD, "SMD")
+run_one_grid(PARAM_GRID_SMD,  "SMD",  k_per_worker = 8L, base_dir = "results/raw")
+
 run_one_grid(PARAM_GRID_lnRR, "lnRR")
 run_one_grid(PARAM_GRID_OR, "OR")
 run_one_grid(PARAM_GRID_IRR, "IRR")
-
-
