@@ -66,20 +66,20 @@ make_param_grid <- function(reps = REPS, k = K, measures = c("SMD", "lnRR", "OR"
   grid <- purrr::map_dfr(measures, function(measure) {
     sp <- spec_es[[measure]]
     
-    # Pair mu with its label (NO crossing here)
+    # pair mu with its label 
     mu_tbl <- tibble::tibble(
       mu       = unname(sp$mu_levels),
       mu_label = names(sp$mu_levels)
     )
     
-    # Cross μ pairs with measure and tau²
+    # cross μ pairs with measure and tau²
     base <- tidyr::crossing(
       mu_tbl,
       measure = measure,
       tau2    = sp$tau2_levels
     )
     
-    # Properly paired baseline (no mix-ups)
+    # properly paired baseline 
     if (isTRUE(sp$vary_baseline)) {
       baseline_tbl <- tibble::tibble(
         baseline_label = names(sp$baseline_levels),
@@ -125,20 +125,20 @@ make_param_grid <- function(reps = REPS, k = K, measures = c("SMD", "lnRR", "OR"
 
 
 # param grid for SMD 
-PARAM_GRID_SMD <- make_param_grid(measures="SMD")
+PARAM_GRID_SMD <- make_param_grid(reps=1000, measures="SMD")
 write.csv(PARAM_GRID_SMD, "data/param_grid_smd.csv")
 
 # param grid for lnRR
-PARAM_GRID_LNRR<- make_param_grid(measures="lnRR")
-write.csv(PARAM_GRID_SMD, "data/param_grid_lnRR.csv")
+PARAM_GRID_LNRR<- make_param_grid(reps=1000, measures="lnRR")
+write.csv(PARAM_GRID_LNRR, "data/param_grid_lnRR.csv")
 
 # param grid for OR
-PARAM_GRID_OR <- make_param_grid(measures="OR")
-write.csv(PARAM_GRID_SMD, "data/param_grid_OR.csv")
+PARAM_GRID_OR <- make_param_grid(reps=1000, measures="OR")
+write.csv(PARAM_GRID_OR, "data/param_grid_OR.csv")
 
 # param grid for IRR
-PARAM_GRID_IRR <- make_param_grid(measures="OR")
-write.csv(PARAM_GRID_SMD, "data/param_grid_OR.csv")
+PARAM_GRID_IRR <- make_param_grid(reps=1000, measures="IRR")
+write.csv(PARAM_GRID_IRR, "data/param_grid_IRR.csv")
 
 
 
@@ -152,7 +152,7 @@ write.csv(PARAM_GRID_SMD, "data/param_grid_OR.csv")
 # 3 tau^2 x 2 mu x 2 baseline group mean = 12 conditions
 
 ## total sims
-# If REP=1000 ===> 12*1000 + 24*1000 = 3600
+# If REP=1000 ===> 12*1000 + 24*1000 = 36,000
 
 
 # #### check output

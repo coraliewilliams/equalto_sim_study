@@ -467,15 +467,13 @@ m2.irr.rma <- rma.glmm(measure="IRR",
 Fitting with glmmTMB:
 
 ```{r}
-# set up long data format
-dat.irr.long <- data.frame(
-  study     = rep(dat.irr$study, times = 2),
-  trt       = rep(c(-0.5, 0.5), each = nrow(dat.irr)),  # -0.5 = C, 0.5 = T => to match metafor contrast coding
-  t         = c(dat.irr$t_C, dat.irr$t_T),
-  y         = c(dat.irr$yC,  dat.irr$yT),
-  lambda    = c(dat.irr$lambda_C, dat.irr$lambda_T)
-)
-  
+# set up long data format (---- updated on 30/10/25)
+  irr_long <- data.table(
+    study = c(rep(dat_irr$study,2)),
+    trt   = c(rep(-0.5, nrow(dat_irr)),
+              rep(0.5, nrow(dat_irr))), #-0.5 = C, 0.5 = T => to match metafor contrast coding
+    t     = c(dat_irr$t_C, dat_irr$t_T),
+    y     = c(dat_irr$yC,   dat_irr$yT))
 
 # glmmTMB poisson model
 m2.irr.tmb <- glmmTMB(y ~ factor(trt) + offset(log(t)) + (0 + trt | study) + (1|study),
