@@ -30,7 +30,7 @@ source("R/02_functions.R")
 
 # ---- parallel setup ----
 Sys.setenv(OPENBLAS_NUM_THREADS = "1", MKL_NUM_THREADS = "1", OMP_NUM_THREADS = "1")
-plan(multisession, workers = max(1, future::availableCores() - 2)) ##use all cores but 1
+plan(multisession, workers = max(1, future::availableCores() - 1)) ##use all cores but 1
 handlers("rstudio")
 options(progressr.enable = TRUE)
 options(future.globals.maxSize = 2 * 1024^3) 
@@ -367,7 +367,7 @@ run_one_grid(PARAM_GRID_lnRR, "lnRR", k_per_worker = 1L, base_dir = "results/raw
 
 
 
-run_one_grid(PARAM_GRID_OR[1:4000,], "OR", k_per_worker = 3L, base_dir = "results/raw")
+run_one_grid(PARAM_GRID_OR[9001:12000,], "OR", k_per_worker = 3L, base_dir = "results/raw")
 run_one_grid(PARAM_GRID_IRR, "IRR", k_per_worker = 10L, base_dir = "results/raw")
 
 
@@ -409,7 +409,7 @@ raw_conc <- function(label) {
 raw_conc("SMD")
 raw_conc("lnRR")
 raw_conc("OR")
-raw_conc("SMD")
+raw_conc("IRR")
 
 
 ### ----- bind all results into one dataframe for analyses/plots 
@@ -418,5 +418,8 @@ library(data.table)
 res_SMD <- rbindlist(res_all_SMD, use.names = TRUE, fill = TRUE)
 write.csv(res_SMD, "results/res_smd.csv")
 
-res_SMD <- rbindlist(res_all_lnRR, use.names = TRUE, fill = TRUE)
-write.csv(res_SMD, "results/res_lnrr.csv")
+res_lnrr <- rbindlist(res_all_lnRR, use.names = TRUE, fill = TRUE)
+write.csv(res_lnrr, "results/res_lnrr.csv")
+
+res_OR <- rbindlist(res_all_OR, use.names = TRUE, fill = TRUE)
+write.csv(res_OR, "results/res_OR.csv")
