@@ -2,3 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Ignore only raw simulation output folders
+results/raw/SMD/
+results/raw/lnRR/
+results/raw/OR/
+results/raw/IRR/

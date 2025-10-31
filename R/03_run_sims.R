@@ -316,7 +316,7 @@ run_chunk_df <- function(chunk_df, data_dir, res_dir, timeout_sec = 300L) {
     }, silent = TRUE)
     if ((i %% 200L) == 0L) gc(FALSE)
   }
-  invisible(NULL)  # nothing to return
+  invisible(NULL)
 }
 
 
@@ -345,8 +345,7 @@ run_one_grid <- function(PARAM_GRID, label, k_per_worker = 8L,
       .options = furrr::furrr_options(
         seed       = TRUE,
         packages   = pkg_needed,
-        globals    = TRUE,
-        stdout     = FALSE
+        globals    = TRUE
       )
     )
   )
@@ -362,8 +361,9 @@ PARAM_GRID_IRR <- readr::read_csv("data/param_grid_IRR.csv")
 
 
 # ---- Run sims and save output -----------------------------------------------
-run_one_grid(PARAM_GRID_SMD,  "SMD",  k_per_worker = 8L, base_dir = "results/raw")
+run_one_grid(PARAM_GRID_SMD,  "SMD", k_per_worker = 10L, base_dir = "results/raw")
 
-run_one_grid(PARAM_GRID_lnRR, "lnRR")
-run_one_grid(PARAM_GRID_OR, "OR")
-run_one_grid(PARAM_GRID_IRR, "IRR")
+run_one_grid(PARAM_GRID_lnRR[2450:2549,], "lnRR", k_per_worker = 1L, base_dir = "results/raw")
+
+run_one_grid(PARAM_GRID_OR, "OR", k_per_worker = 10L, base_dir = "results/raw")
+run_one_grid(PARAM_GRID_IRR, "IRR", k_per_worker = 10L, base_dir = "results/raw")
