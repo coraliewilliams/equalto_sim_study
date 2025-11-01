@@ -19,7 +19,6 @@ suppressPackageStartupMessages({
   library(metafor)
   library(glmmTMB)
   library(data.table)
-  library(progressr)
   library(R.utils)
 })
 
@@ -30,7 +29,7 @@ source("R/02_functions.R")
 
 # ---- parallel setup ----
 Sys.setenv(OPENBLAS_NUM_THREADS = "1", MKL_NUM_THREADS = "1", OMP_NUM_THREADS = "1")
-plan(multisession, workers = max(1, future::availableCores() - 1)) ##use all cores but 1
+plan(multisession, workers = max(1, future::availableCores() - 2)) ##use all cores but 1
 handlers("rstudio")
 options(progressr.enable = TRUE)
 options(future.globals.maxSize = 2 * 1024^3) 
@@ -364,11 +363,8 @@ PARAM_GRID_IRR <- readr::read_csv("data/param_grid_IRR.csv")
 # ---- Run sims and save output -----------------------------------------------
 run_one_grid(PARAM_GRID_SMD,  "SMD", k_per_worker = 10L, base_dir = "results/raw")
 run_one_grid(PARAM_GRID_lnRR, "lnRR", k_per_worker = 1L, base_dir = "results/raw")
-
-
-
-run_one_grid(PARAM_GRID_OR[9001:12000,], "OR", k_per_worker = 3L, base_dir = "results/raw")
-run_one_grid(PARAM_GRID_IRR, "IRR", k_per_worker = 10L, base_dir = "results/raw")
+run_one_grid(PARAM_GRID_OR, "OR", k_per_worker = 3L, base_dir = "results/raw")
+run_one_grid(PARAM_GRID_IRR, "IRR", k_per_worker = 3L, base_dir = "results/raw")
 
 
 
@@ -423,3 +419,6 @@ write.csv(res_lnrr, "results/res_lnrr.csv")
 
 res_OR <- rbindlist(res_all_OR, use.names = TRUE, fill = TRUE)
 write.csv(res_OR, "results/res_OR.csv")
+
+res_IRR <- rbindlist(res_all_IRR, use.names = TRUE, fill = TRUE)
+write.csv(res_IRR, "results/res_IRR.csv")
