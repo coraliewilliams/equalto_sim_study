@@ -1,5 +1,5 @@
 ---
-title: "Meta-analysis with glmmTMB R package"
+title: "Fitting meta-analysis with `glmmTMB` package"
 author: "Coralie Williams"
 format:
   html:
@@ -160,6 +160,11 @@ We specify:
 
 -   the within-study random effect $m_{ij}$ that captures the variability at the observation level is modelled as the *residual error* in this model.
 
+::: callout-note
+**Important note:** the `equalto` multivariate random effect variable (here it is called `obs`) must be a factor and the corresponding VCV matrix must have rows and columns matching the levels of the `obs` variable.
+:::
+
+
 ```{r}
 # Fit glmmTMB model with equalto ----------------------------------
 fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
@@ -178,8 +183,7 @@ Let's compare with the `metafor` package `rma.mv` function that fits a multileve
 fit.metafor <- rma.mv(yi = y, 
                       V = VCV,
                       random = list(~1 | study, ~1 | id),
-                      #test = "t", dfs = "contain",
-                      control=list(REMLf=FALSE),
+                      control=list(REMLf=FALSE), #set this to obtain the exact same likelihood as glmmTMB 
                       data = dat) #uses REML by default
 
 summary(fit.metafor)
@@ -211,18 +215,171 @@ kable(output)
 
 ```
 
-The overall mean estimate and random effect variance estimates are identical across the two packages.
+The overall mean estimate and random effect variance estimates are identical across the two packages ✅
+
+
+### Extra analyses
+
+When the number of studies is small (<10) it is preferable to use the $t$-distribution and adjusted degrees of freedom to avoid Type I error rate of coefficient tests and low coverage rates of coefficient confidence intervals ([read more about the recommendations here](https://wviechtb.github.io/metafor/reference/misc-recs.html)).
+
+In `metafor` you can do this directly in the `rma.mv` function when fitting a multilevel/multivariate model with the arguments `test="t"` and `dfs="contain"` (actually if `dfs="contain"` is set this automatically sets `test="t"`).
+
+```{r}
+# Fit metafor model --------------------------------------------
+fit.metafor.t <- rma.mv(yi = y, 
+                      V = VCV,
+                      random = list(~1 | study, ~1 | id),
+                      test = "t",
+                      dfs = "contain", 
+                      data = dat) 
+
+summary(fit.metafor.t)
+```
+
+With `glmmTMB` you can derive the $t$-test statistic, adjusted degrees of freedom and corresponding P value the following way:
+
+```{r}
+# summary stats of fixed effects
+fef <- as.data.frame(summary(fit.equalto)$coefficients$cond)
+b0.est <- fef$Estimate
+b0.se <- fef$`Std. Error`
+
+# if the coefficient of interest varies at the level of corresponding to a random effect (i.e. here it is `study`) then the degree of freedom if the number of unique levels minus the number of estimated coefficients in the model
+df.contain <- length(unique(dat$study)) - nrow(fef)
+# otherwise it is the total nuber of estimates in the analysis minus the total number of model coefficients
+#df.adj <- nrow(dat) - nrow(fef)
+
+# get t-test statistic and p-value
+t <- b0.est / b0.se
+p <- 2 * pt(abs(t), df = df.contain, lower.tail = FALSE) # two-sided p value
+# 95% CI
+crit <- qt(0.975, df = df.contain)
+ci   <- c(b0.est - crit * b0.se, b0.est + crit * b0.se)
+
+# glmmTMB t-test output
+fef.t <- data.frame(Estimate = b0.est,
+                    SE = b0.se,
+                    tval = t,
+                    df = df.contain,
+                    pval = p,
+                    ci.lb = ci[1],
+                    ci.ub = ci[2])
+fef.t
+
+```
+
+
 
 # Illustrative examples
 
+To illustrate how to fit meta-analyses with `glmmTMB`, we re-analyse three published datasets from distinct research domains:
+
+- **Medicine** — vaccine effectiveness.
+- **Ecology & evolution** — plant diversity effects.
+- **Social sciences** — school-based learning programmes.
+
+Across these case studies, we show model specification, output, and interpretation using `glmmTMB`.
+
+
 ## Bivariate meta-analysis
+
+Meta-analysis is widely used in medicine to combine evidence across clinical trials and observational studies. As many outcomes are binary (e.g., event vs non-event), common effect sizes are odds ratios, risk ratios, risk differences, and their log transforms.
+
+We will use the Colditz et al. (1994) dataset that is directly avaiable in `metafor` via the `metadat` R package. 
+This meta-analysis assessed the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine against tuberculosis across 13 studies.
+
 
 ```{r}
 dat <- dat.colditz1994
-head(dat)
 ```
 
+Reshape to long format so that each arm has its own row (“v” = vaccinated, “c” = unvaccinated/control), and setting control as the reference group.
+
+```{r}
+dat_long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+levels(dat_long$group) <- c("c", "v")
+dat_long$group <- relevel(dat_long$group, ref="c")
+```
+
+Then we compute the log-odds effect size measures with `metafor` function `escalc`. We also need to create a constant grouping dummy variable `g` for `glmmTMB` model specification (this needs to be a constant value for all rows). 
+```{r}
+dat_long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat_long)
+dat_long$obs <- as.factor(1:nrow(dat_long))
+dat_long$g <- 1 #dummy variable
+head(dat_long)
+```
+
+Derive the variance-covariance matrix (VCV) with in diagonal the sampling error variances and zero on the off-diagonals (assume studies are independent):
+
+```{r}
+VCV <- diag(dat_long$vi)
+VCV[1:5,1:5]
+```
+
+To fit a bivariate meta-analysis with `glmmTMB` using `equalto` supply the sampling-error variance–covariance matrix (here it is called `VCV`), and fix the dispersion at zero (`dispformula = ~ 0`) since we don't want to model any within-study variance effect. 
+
+```{r}
+bv_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
+                       dispformula = ~ 0,
+                       REML = TRUE,
+                       data=dat_long)
+```
+
+To obtain the variance component estimates and corresponding correlation $\rho$ (i.e. `rho`) for each group we use the `VarCorr` function:
+
+```{r}
+vc <- VarCorr(bv_fit)
+var_con <- vc$cond$study["groupc", "groupc"]
+var_exp <- vc$cond$study["groupv", "groupv"]
+rho.tmb <- vc$cond$study["groupc", "groupv"] / sqrt(var_con * var_exp)
+```
+
+Then we can extract the model results as follows: 
+
+```{r}
+bv_out <- data.frame(est.b0 = as.numeric(unlist(fixef(bv_fit))[[1]]), 
+                     se.b0 = as.numeric(sqrt(vcov(bv_fit)[[1]]))[1], 
+                     est.b1 = as.numeric(unlist(fixef(bv_fit))[[2]]), 
+                     se.b1 = as.numeric(sqrt(vcov(bv_fit)[[1]]))[4], 
+                     tau1 = sqrt(var_con), #study-level heterogeneity for group=control
+                     tau2 = sqrt(var_exp), #study-level heterogeneity for group=exp
+                     rho = rho.tmb)
+
+bv_out
+```
+
+
+
+This is equivalent to the following model in `metafor`:
+
+```{r}
+bv_fit_rma <- rma.mv(yi, vi, mods = ~ group, 
+                     random = ~ group | study, 
+                     struct = "UN",
+                     data=dat_long)
+```
+
+We can extract the model results as follows:
+
+```{r}
+bv_out_rma <- with(bv_fit_rma, data.frame(est.b0 = as.numeric(b[1]),
+                                      se.b0 = se[1],
+                                      est.b1 = as.numeric(b[2]),
+                                      se.b1 = se[2],
+                                      tau1 = sqrt(tau2[1]),
+                                      tau2 = sqrt(tau2[2]),
+                                      rho = rho))
+bv_out_rma
+```
+
+
+
+
 ## Phylogenetic meta-analysis
+
+In meta-analysis of ecological and evolutionary studies, effect sizes are often drawn from multiple species. Because species share evolutionary history, these effect size estimates are not independent. To account for this phylogenetic relatedness, we can include a species-level random effect structured by a phylogenetic correlation (which is derived from a phylogenetic tree and assumed model of evolution). We can fit such a random effect in `glmmTMB` with the `propto` covariance structure. 
+
+We will use a published meta-analysis dataset of plant diversity effects on leaf traits (Felix et al., 2023) to showcase how to use `glmmTMB` to fit a phylogenetic meta-analysis.
 
 ```{r}
 #| eval: false
@@ -293,15 +450,71 @@ SLA_ab <- subset(ef_ab, trait_category == "SLA")
 
 ```
 
+Fit a phylogenetic meta-analysis in `glmmTMB` using two covariance structures:
+
+-   `propto`: to model shared evolutionary history across species
+-   `equalto`: to incorporate sampling-errors variance-covariance 
+
+
+```{r}
+
+```
+
+
+
 ## Location-scale meta-analysis
+
+We will use a social-science meta-analysis of 48 studies on school-based writing-to-learn interventions. Each study contrasts an intervention group (greater emphasis on writing tasks) with a control group, and study effect size measures are standardised mean differences, where positive values indicate better academic performance under the intervention.
+
 
 ```{r}
 dat <- dat.bangertdrowns2004
 head(dat)
 ```
 
+
+
+
+
+
+
 # Simulation study
 
 ## Simulation parameters
 
 ## Results
+
+
+
+
+# References
+
+
+Bangert-Drowns, R. L., Hurley, M. M., & Wilkinson, B. (2004). The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis. Review of Educational Research, 74, 29-58.
+
+Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. Journal of the American Medical Association, 271(9), 698–702. https://doi.org/10.1001/jama.1994.03510330076038
+
+
+White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <https://CRAN.R-project.org/package=metadat>.
+
+Viechtbauer, W. (2010). _Conducting meta-analyses in R with the metafor package_. Journal of Statistical Software, 36(3), 1–48. <https://doi.org/10.18637/jss.v036.i03>
+
+
+# Session info
+
+```{r}
+#| label: Reproducibility-SessionInfo-R-environment
+#| fig-align: "center"
+#| out-width: '100%'
+#| results: asis
+#| message: false
+#| warnings: false
+
+library(sessioninfo)
+library(details)
+
+si <- session_info()
+details(si, summary = 'Current session info', open = FALSE)
+
+```
+
