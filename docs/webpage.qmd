@@ -202,7 +202,7 @@ metafor <- data.frame(model = "metafor",
                       sigma.m = sqrt(fit.metafor$sigma2[2])) ## within study variance
 
 equalto <- data.frame(model = "glmmTMB",
-                      est = unlist(fixef(fit.equalto))[[1]],
+                      est = summary(fit.equalto)$coefficients$cond[[1]],
                       se = as.numeric(sqrt(vcov(fit.equalto)[[1]])),
                       zval = summary(fit.equalto)$coefficients$cond[3],
                       pval = summary(fit.equalto)$coefficients$cond[4],
@@ -283,11 +283,9 @@ Across these case studies, we show model specification, output, and interpretati
 
 ## Bivariate meta-analysis
 
-Meta-analysis is widely used in medicine to combine evidence across clinical trials and observational studies. As many outcomes are binary (e.g., event vs non-event), common effect sizes are odds ratios, risk ratios, risk differences, and their log transforms.
+Meta-analysis is widely used in medicine to combine evidence across clinical trials and observational studies. As many outcomes are events in medicine, common effect sizes measures used are odds ratios, risk ratios, risk differences, and their log transforms.
 
-We will use the Colditz et al. (1994) dataset that is directly avaiable in `metafor` via the `metadat` R package. 
-This meta-analysis assessed the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine against tuberculosis across 13 studies.
-
+We will use the Colditz et al. (1994) dataset that is directly avaiable in `metafor` via the `metadat` R package. This published meta-analysis assessed the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine against tuberculosis across 13 studies. We will fit a bivariate meta-analysis that treats the two vaccination groups as separate outcomes, and estimates, for each group, the overall mean effect and among-study variance, as well as the correlation of study-level effects between groups (i.e., how strongly they co-vary).
 
 ```{r}
 dat <- dat.colditz1994
@@ -301,7 +299,8 @@ levels(dat_long$group) <- c("c", "v")
 dat_long$group <- relevel(dat_long$group, ref="c")
 ```
 
-Then we compute the log-odds effect size measures with `metafor` function `escalc`. We also need to create a constant grouping dummy variable `g` for `glmmTMB` model specification (this needs to be a constant value for all rows). 
+We compute the logit-transformed event proportion (`PLO`) as the effect-size measure. And we also need to create a constant grouping dummy variable `g` for `glmmTMB` model specification (this needs to be a constant value for all rows). 
+
 ```{r}
 dat_long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat_long)
 dat_long$obs <- as.factor(1:nrow(dat_long))
@@ -313,7 +312,7 @@ Derive the variance-covariance matrix (VCV) with in diagonal the sampling error 
 
 ```{r}
 VCV <- diag(dat_long$vi)
-VCV[1:5,1:5]
+VCV[1:5,1:5] #show first five measures of VCV matrix
 ```
 
 To fit a bivariate meta-analysis with `glmmTMB` using `equalto` supply the sampling-error variance–covariance matrix (here it is called `VCV`), and fix the dispersion at zero (`dispformula = ~ 0`) since we don't want to model any within-study variance effect. 
@@ -341,8 +340,8 @@ bv_out <- data.frame(est.b0 = as.numeric(unlist(fixef(bv_fit))[[1]]),
                      se.b0 = as.numeric(sqrt(vcov(bv_fit)[[1]]))[1], 
                      est.b1 = as.numeric(unlist(fixef(bv_fit))[[2]]), 
                      se.b1 = as.numeric(sqrt(vcov(bv_fit)[[1]]))[4], 
-                     tau1 = sqrt(var_con), #study-level heterogeneity for group=control
-                     tau2 = sqrt(var_exp), #study-level heterogeneity for group=exp
+                     tau2_1 = var_con, #study-level heterogeneity for group=control
+                     tau2_2 = var_exp, #study-level heterogeneity for group=exp
                      rho = rho.tmb)
 
 bv_out
@@ -366,8 +365,8 @@ bv_out_rma <- with(bv_fit_rma, data.frame(est.b0 = as.numeric(b[1]),
                                       se.b0 = se[1],
                                       est.b1 = as.numeric(b[2]),
                                       se.b1 = se[2],
-                                      tau1 = sqrt(tau2[1]),
-                                      tau2 = sqrt(tau2[2]),
+                                      tau2_1 = tau2[1],
+                                      tau2_2 = tau2[2],
                                       rho = rho))
 bv_out_rma
 ```
@@ -382,34 +381,31 @@ In meta-analysis of ecological and evolutionary studies, effect sizes are often 
 We will use a published meta-analysis dataset of plant diversity effects on leaf traits (Felix et al., 2023) to showcase how to use `glmmTMB` to fit a phylogenetic meta-analysis.
 
 ```{r}
-#| eval: false
-#| output: false
-#| warnings: false
-
+#| results: "hide"    
+#| message: false     
+#| warning: false     
 
 library(readr)
 ef <- read_csv("felix_data/effect_sizes.csv")
 options(na.action = "na.pass")
-head(ef)
 ```
 
 Data set-up:
 
 ```{r}
-#| eval: false
-#| output: false
-#| warnings: false
+#| results: "hide"      # hide printed output
+#| message: false      # hide messages
+#| warning: false      # hide warnings
 
 # load libraries
 suppressPackageStartupMessages({
   library(rotl)
   library(ape)
+  library(dplyr)
 })
 
-## calculate absolute ef
-yi_ab <- abs(ef$yi)
-ef_ab <- ef
-ef_ab$yi <- yi_ab  #converts effect sizes to absolute values
+#remove empty rows in Nfixing
+ef <- ef[which(ef$Nfixing!=is.na(ef$Nfixing)),] 
 
 # construct phylogentic tree matrix for use as random factor
 species <- unique(ef$species) # list of unique species in meta-analysis
@@ -420,61 +416,152 @@ tree$tip.label <- strip_ott_ids(tree$tip.label, remove_underscores = TRUE) # cha
 
 # calculate correlations between all species = cor
 tree2 <- compute.brlen(tree)
-cor <- vcv(tree2, cor = T)
+phylo.cor <- vcv(tree2, cor = T)
 
 # add phylo random factor
-ef$phylo <- ef$species
-ef_ab$phylo <- ef_ab$species
+ef$phylo <- factor(ef$species, levels = rownames(phylo.cor))
 
-### Subgroups for each trait category   
+# set up phylo.cor row and column names
+phylo.cor <- phylo.cor[rownames(phylo.cor) %in% levels(ef$phylo),
+                       colnames(phylo.cor) %in% levels(ef$phylo)]
 
-# directional 
-phenolics <- subset(ef, trait_category == "phenolics")
-LDMC <- subset(ef, trait_category == "LDMC")
-C <- subset(ef, trait_category == "C")
-N <- subset(ef, trait_category == "N")
-terpenes <- subset(ef, trait_category == "terpenes")
-thickness <- subset(ef, trait_category == "thickness")
-toughness <- subset(ef, trait_category == "toughness")
-SLA <- subset(ef, trait_category == "SLA")
+# add g variable
+ef$g <- 1
 
-# absolute
-phenolics_ab <- subset(ef_ab, trait_category == "phenolics")
-LDMC_ab <- subset(ef_ab, trait_category == "LDMC")
-C_ab <- subset(ef_ab, trait_category == "C")
-N_ab <- subset(ef_ab, trait_category == "N")
-terpenes_ab <- subset(ef_ab, trait_category == "terpenes")
-thickness_ab <- subset(ef_ab, trait_category == "thickness")
-toughness_ab <- subset(ef_ab, trait_category == "toughness")
-SLA_ab <- subset(ef_ab, trait_category == "SLA")
+# set up sampling errors variance-covariance matrix
+V <- diag(ef$vi)
+ef$id <- as.factor(1:nrow(ef))
+rownames(V) <- colnames(V) <- levels(ef$id)
 
 ```
 
+Let's view the five rows of the species correlation matrix `phylo.cor`  and the sampling error variance-covariance matrix `V` (which assumes no within-study or among effect size correlations):
+
+```{r}
+phylo.cor[1:5,1:5]
+V[1:5,1:5]
+```
+
+
 Fit a phylogenetic meta-analysis in `glmmTMB` using two covariance structures:
 
--   `propto`: to model shared evolutionary history across species
+-   `propto`: to model shared evolutionary history across species assuming a proportional phylogenetic correlation matrix
 -   `equalto`: to incorporate sampling-errors variance-covariance 
 
 
 ```{r}
+fit_phylo <- glmmTMB(yi ~ Nfixing-1 + 
+                       (1 | experiment) + (1 | ACC) +
+                       (1 | species) + propto(0 + phylo|g, phylo.cor) + 
+                       equalto(0 + id|g, V), 
+                     data = ef, 
+                     REML=TRUE)
 
 ```
 
+We can extract and view the fixed effect estimates, showing the two groups for `Nfixing` (whether neighboring plants have nitrogen fixing or not):
+
+```{r}
+summary(fit_phylo)$coefficients$cond
+```
+
+The variance component estimates can be obtained:
+
+```{r}
+# get random-effects varcor parameters
+re_est <- as.data.frame(confint(fit_phylo, parm="theta_"))
+
+# summarise random-effects variance estimates
+data.frame(sigma2.experiment = round(re_est$Estimate[1]^2,4), 
+           sigma2.ACC = round(re_est$Estimate[2]^2,4),
+           sigma2.species = round(re_est$Estimate[3]^2,4),
+           sigma2.phylo = round(re_est$Estimate[4]^2,4), 
+           sigma2.id=round(sigma(fit_phylo)^2,4))
+
+```
+
+
+
+This model is equivalent to the following model fitted with `metafor`:
+
+```{r}
+fit_phylo_rma <- rma.mv(yi, vi,
+                        mods = ~ Nfixing-1,
+                        random = list( ~ 1 | experiment, ~ 1 | ACC,
+                                       ~1 | species, ~1 | phylo,
+                                       ~1 | id), 
+                        R = list(phylo = phylo.cor),
+                        data = ef,
+                        sparse = TRUE,
+                        method="REML") #default is REML
+
+summary(fit_phylo_rma)
+```
+
+
+
+`control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS"))`
+
+`control = list(REMLf=FALSE, optimizer = "BFGS"))`
 
 
 ## Location-scale meta-analysis
 
-We will use a social-science meta-analysis of 48 studies on school-based writing-to-learn interventions. Each study contrasts an intervention group (greater emphasis on writing tasks) with a control group, and study effect size measures are standardised mean differences, where positive values indicate better academic performance under the intervention.
+In a standard random-effects meta-analysis, the between-study variance $\tau^2$ is assumed constant across studies. This is often unrealistic. **Location–scale models** relax this assumption by modelling both the *location* (the mean effect) and the *scale* (the amount of heterogeneity) as functions of study-level moderators. In practice, you can include different predictors in the mean and variance parts to test whether heterogeneity varies with study features (e.g., outcome type, design) or differs across subgroups. This yields a more flexible meta-analytic model that can explain, not just accommodate, between-study variability.
 
+We will use a social-science meta-analysis of 48 studies on school-based writing-to-learn interventions. Each study contrasts an intervention group (greater emphasis on writing tasks) with a control group. The effect size measures used in this dataset is the *standardised mean differences*, where positive values indicate better academic performance under the intervention.
 
 ```{r}
 dat <- dat.bangertdrowns2004
-head(dat)
+dat$id <- as.factor(dat$id)
+dat$g <- 1
+```
+
+Define `V` - the sampling error variance-covariance matrix:
+
+```{r}
+V <- diag(dat$vi)
+row.names(V) <- colnames(V) <- levels(dat$id)
+```
+
+We fit a simple location-scale meta-analysis modelling the study sample size variable (`ni`) in the location and scale parts. We use `dispformula` in `glmmTMB` to specify the scale part of the model. 
+
+```{r}
+#| results: "hide"    
+#| message: false     
+#| warning: false   
+fit_ls <- glmmTMB(yi ~ ni + equalto(0 + id|g, V),
+                  dispformula = ~ ni,
+                  data = dat,
+                  REML = TRUE)
+```
+
+View the estimates of the location-part of the model:
+
+```{r}
+summary(fit_ls)$coefficients$cond
+```
+
+View the estimates of the scale-part of the model:
+
+```{r}
+summary(fit_ls)$coefficients$disp
+```
+
+
+We can fit the same model with `metafor` with the `rma` function and using the `scale` argument:
+
+```{r}
+fit_ls_rma <- rma(yi, vi, 
+                  mods = ~ ni,
+                  scale = ~ ni,
+                  control=list(REMLf=FALSE), #this is to get the same log-likelihood
+                  data = dat)
 ```
 
 
 
-
+----> Maybe add one more example of a large meta-analysis for a more complex model?
 
 
 
@@ -489,16 +576,17 @@ head(dat)
 
 # References
 
+Bangert-Drowns, R. L., Hurley, M. M., & Wilkinson, B. (2004). _The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis_. Review of Educational Research, 74, 29-58.
 
-Bangert-Drowns, R. L., Hurley, M. M., & Wilkinson, B. (2004). The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis. Review of Educational Research, 74, 29-58.
+Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). _Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature_. Journal of the American Medical Association, 271(9), 698–702. <https://doi.org/10.1001/jama.1994.03510330076038>
 
-Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. Journal of the American Medical Association, 271(9), 698–702. https://doi.org/10.1001/jama.1994.03510330076038
-
-
-White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <https://CRAN.R-project.org/package=metadat>.
+Felix, J. A., Stevenson, P. C., & Koricheva, J. (2023). _Plant neighbourhood diversity effects on leaf traits: A meta-analysis_. Functional Ecology, 37(12), 3150–3163. <https://doi.org/10.1111/1365-2435.14441>
 
 Viechtbauer, W. (2010). _Conducting meta-analyses in R with the metafor package_. Journal of Statistical Software, 36(3), 1–48. <https://doi.org/10.18637/jss.v036.i03>
 
+Viechtbauer,W.,&López-López, J.A. (2022). _Location-scale models for meta-analysis_. Research Synthesis Methods, 13(6), 697–715. <https://doi.org/10.1002/jrsm.1562>
+
+White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <https://CRAN.R-project.org/package=metadat>.
 
 # Session info
 
