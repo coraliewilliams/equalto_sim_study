@@ -1,5 +1,5 @@
 ---
-title: "Fitting meta-analysis with `glmmTMB` package"
+title: "Fitting meta-analysis with `glmmTMB`"
 author: "Coralie Williams"
 format:
   html:
@@ -7,6 +7,7 @@ format:
     toc-location: left
     toc-depth: 3
     theme: cosmo
+    smooth-scroll: true
     toc-title: "**Table of contents**"
     embed-resources: true
     code-fold: show
@@ -19,17 +20,16 @@ format:
 
 This webpage is supporting material to the paper "*Meta-analysis with `glmmTMB` R package*".
 
-We show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which allows to specify the sampling error variance-covariance (VCV) matrix.
+We provide show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which allows to specify the sampling error variance-covariance (VCV) matrix.
 
 ### Contact {#contact}
 
 For questions or comments, contact Coralie Williams: [coraliewilliams\@outlook.com](mailto:coraliewilliams@outlook.com)
 
 
+# Introduction 
 
-# Fitting a meta-analysis with `glmmTMB`
-
-To demonstrate how to fit a meta-analysis using the `glmmTMB` R package, we will fit a multilevel meta-analytic model as a tutorial example, assuming multiple effect sizes per study. This model synthesises effect sizes across studies by accounting for variation at both the study and observation (effect size) levels, while also modelling correlated residual errors within studies.
+To demonstrate how to fit a meta-analysis using the `glmmTMB` R package, we will fit a multilevel meta-analytic model assuming multiple effect sizes per study. This model synthesises effect sizes across studies by accounting for variation at both the study and observation (effect size) levels, while also modelling correlated sampling errors within studies.
 
 Given $j$ effect sizes within $i$ studies, we specify the model as:
 
@@ -166,8 +166,9 @@ We specify:
 
 
 ```{r}
+
 # Fit glmmTMB model with equalto ----------------------------------
-fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
+fit.equalto <- glmmTMB(y ~ 1 + (1|study) + (1|study) + equalto(0 + obs|g,VCV),
                        data=dat,
                        REML=T)
 
@@ -193,24 +194,25 @@ Then, we extract the model results for each model and compare outputs:
 
 ```{r}
 ### Compare output 
+equalto <- data.frame(model = "glmmTMB",
+                      est = summary(fit.equalto)$coefficients$cond[,"Estimate"],
+                      se = summary(fit.equalto)$coefficients$cond[,"Std. Error"],
+                      zval = summary(fit.equalto)$coefficients$cond[,"z value"],
+                      pval = summary(fit.equalto)$coefficients$cond[,"Pr(>|z|)"],
+                      sigma.u = VarCorr(fit.equalto)$cond$study[,"(Intercept)"], ##among study variance estimate
+                      sigma.m = sigma(fit.equalto)^2) ##within study variance estimate
+
+
 metafor <- data.frame(model = "metafor", 
                       est = fit.metafor$b[[1]], 
                       se = fit.metafor$se[[1]], 
                       zval = fit.metafor$zval,
                       pval = fit.metafor$pval,
-                      sigma.u = sqrt(fit.metafor$sigma2[1]), ## among study variance
-                      sigma.m = sqrt(fit.metafor$sigma2[2])) ## within study variance
-
-equalto <- data.frame(model = "glmmTMB",
-                      est = summary(fit.equalto)$coefficients$cond[[1]],
-                      se = as.numeric(sqrt(vcov(fit.equalto)[[1]])),
-                      zval = summary(fit.equalto)$coefficients$cond[3],
-                      pval = summary(fit.equalto)$coefficients$cond[4],
-                      sigma.u = exp(fit.equalto$fit$par[[2]]), ##among study variance estimate
-                      sigma.m = sigma(fit.equalto)) ##within study variance estimate
+                      sigma.u = fit.metafor$sigma2[1], ## among study variance
+                      sigma.m = fit.metafor$sigma2[2]) ## within study variance
 
 
-output <- rbind(metafor, equalto)
+output <- rbind(equalto, metafor)
 kable(output)
 
 ```
@@ -276,7 +278,7 @@ To illustrate how to fit meta-analyses with `glmmTMB`, we re-analyse three publi
 
 - **Medicine** — vaccine effectiveness.
 - **Ecology & evolution** — plant diversity effects.
-- **Social sciences** — school-based learning programmes.
+- **Social sciences** — school-based learning programs.
 
 Across these case studies, we show model specification, output, and interpretation using `glmmTMB`.
 
@@ -450,6 +452,7 @@ Fit a phylogenetic meta-analysis in `glmmTMB` using two covariance structures:
 
 
 ```{r}
+#| cache: true
 fit_phylo <- glmmTMB(yi ~ Nfixing-1 + 
                        (1 | experiment) + (1 | ACC) +
                        (1 | species) + propto(0 + phylo|g, phylo.cor) + 
@@ -485,6 +488,7 @@ data.frame(sigma2.experiment = round(re_est$Estimate[1]^2,4),
 This model is equivalent to the following model fitted with `metafor`:
 
 ```{r}
+#| cache: true
 fit_phylo_rma <- rma.mv(yi, vi,
                         mods = ~ Nfixing-1,
                         random = list( ~ 1 | experiment, ~ 1 | ACC,
@@ -500,9 +504,16 @@ summary(fit_phylo_rma)
 
 
 
-`control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS"))`
+```{r}
+#| cache: true
+fit_phylo <- glmmTMB(yi ~ Nfixing-1 + 
+                       (1 | experiment) + (1 | ACC) +
+                       (1 | species) + propto(0 + phylo|g, phylo.cor) + 
+                       equalto(0 + id|g, V), 
+                     data = ef, 
+                     REML=TRUE)
 
-`control = list(REMLf=FALSE, optimizer = "BFGS"))`
+```
 
 
 ## Location-scale meta-analysis
@@ -564,13 +575,57 @@ fit_ls_rma <- rma(yi, vi,
 ----> Maybe add one more example of a large meta-analysis for a more complex model?
 
 
+# Useful notes and links
+
+## Changing optimization method
+
+We can change the optimization method using by modifying the `control = glmmTMBControl()` argument. By default, `glmmTMB` uses the `nlminb` non-linear optimizer for parameter estimation. 
+
+
+
+-   [Troubleshooting with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
+
+`control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS"))`
+`control = list(REMLf=FALSE, optimizer = "BFGS"))`
+
+-   [Troubleshooting with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
+
+
+
+## Visualisation and plotting
+
+We can transform a `glmmTMB` model output into a `metafor` object to be able to use the visualisation tools available in `metafor` and `orchard` for example.
+
+[TO BE DONE]
 
 # Simulation study
 
+To assess `glmmTMB` we conducted a simulation study. 
+
+We generated data given four effect size measures:
+
+*   Standardised Mean Difference (SMD)
+
+*   Log Response Ratio (lnRR) 
+
+*   Odd ratio effect sizes (OR)
+
+*   Poisson meta-analysis to model incidence rate ratios (IRR)
+
+
 ## Simulation parameters
 
-## Results
+| Measure | $\mu$         | $\tau^2$ | $\sigma_T$ | $\sigma_C$ | $\mu_C$ | $n_T$ | $n_C$ | $t_T$ | $t_C$ |
+|:--------|:--------------|:--------:|:----------:|:----------:|:-------:|:-----:|:-----:|:-----:|:-----:|
+| SMD     | $0.3$         | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |
+| lnRR    | $\log(1.3)$   | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |
+| OR      | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     | $50$  | $50$  |  -    |  -    |
+| IRR     | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     |  -    |  -    | $50$  | $50$  |
 
+
+
+
+## Results
 
 
 
