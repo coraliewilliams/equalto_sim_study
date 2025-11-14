@@ -433,7 +433,7 @@ plot_est_binom <- mu_hat_binom_plot + tau2_hat_binom_plot +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 
-ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 7, height = 11)
+ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 9, height = 11)
 
 
 
