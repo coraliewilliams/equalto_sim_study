@@ -20,6 +20,7 @@ suppressPackageStartupMessages({
   library(glmmTMB)
   library(data.table)
   library(R.utils)
+  library(progressr)
 })
 
 
@@ -362,7 +363,7 @@ PARAM_GRID_IRR <- readr::read_csv("data/param_grid_IRR.csv")
 
 # ---- Run sims and save output -----------------------------------------------
 run_one_grid(PARAM_GRID_SMD,  "SMD", k_per_worker = 10L, base_dir = "results/raw")
-run_one_grid(PARAM_GRID_lnRR, "lnRR", k_per_worker = 1L, base_dir = "results/raw")
+run_one_grid(PARAM_GRID_lnRR, "lnRR", k_per_worker = 3L, base_dir = "results/raw")
 run_one_grid(PARAM_GRID_OR, "OR", k_per_worker = 3L, base_dir = "results/raw")
 run_one_grid(PARAM_GRID_IRR, "IRR", k_per_worker = 3L, base_dir = "results/raw")
 
@@ -422,3 +423,53 @@ write.csv(res_OR, "results/res_OR.csv")
 
 res_IRR <- rbindlist(res_all_IRR, use.names = TRUE, fill = TRUE)
 write.csv(res_IRR, "results/res_IRR.csv")
+
+
+
+#########-------- CHECKS -------###########
+
+#--- OR
+row_counts <- vapply(
+  res_all_OR,
+  function(d)
+    if (is.null(d)) NA_integer_
+  else if (inherits(d, c("data.frame","data.table"))) nrow(d)
+  else NA_integer_, integer(1)
+)
+
+#expect 5 rows (5 models) for OR
+chk_rows <- which(is.na(row_counts) | row_counts != 5) 
+chk_rows # only one didn't return results
+
+res_all_OR[[11046]] #it is rma.uni 
+dat_or <- simdat_all_OR[[11046]]
+fit <- rma(yi, vi, data = dat_or, control = list(REMLf = FALSE))
+
+### Error in rma(yi, vi, data = dat_or, control = list(REMLf = FALSE)) :
+###   Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies.
+
+
+#--- IRR
+row_counts <- vapply(
+  res_all_IRR,
+  function(d)
+    if (is.null(d)) NA_integer_
+  else if (inherits(d, c("data.frame","data.table"))) nrow(d)
+  else NA_integer_, integer(1)
+)
+
+#expect 4 rows (4 models) for IRR
+chk_rows <- which(is.na(row_counts) | row_counts != 4) 
+chk_rows
+
+### ---- 171 models in rma.glmm did not return anything 
+### there was these errors
+### $warn
+### [1] "step size truncated due to divergence"
+### $error
+### [1] "$ operator is invalid for atomic vectors"
+
+
+res_all_IRR[[11046]] #it is rma.uni that didn't return results
+simdat_all_IRR[[11046]]
+

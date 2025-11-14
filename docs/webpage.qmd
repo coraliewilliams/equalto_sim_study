@@ -430,9 +430,14 @@ phylo.cor <- phylo.cor[rownames(phylo.cor) %in% levels(ef$phylo),
 # add g variable
 ef$g <- 1
 
-# set up sampling errors variance-covariance matrix
-V <- diag(ef$vi)
+# derive effect size level variable => make sure it is a factor
 ef$id <- as.factor(1:nrow(ef))
+
+# set up sampling errors variance-covariance matrix 
+# assuming within-study a constant correlation of 0.5
+V <- metafor::vcalc(vi, cluster=ACC, obs=id, data=dat, rho=0.5)
+
+# make sure row matrix and id levels match
 rownames(V) <- colnames(V) <- levels(ef$id)
 
 ```
@@ -444,8 +449,9 @@ phylo.cor[1:5,1:5]
 V[1:5,1:5]
 ```
 
+We fit a multilevel model using experimental site (\texttt{experiment}), study ID (\texttt{ACC}), individual effect ID (\texttt{id}) and plant species (\texttt{species}) were included as random factors to account for non-independence among effect sizes. 
 
-Fit a phylogenetic meta-analysis in `glmmTMB` using two covariance structures:
+This multilevel phylogenetic meta-analysis has two covariance structures in `glmmTMB`:
 
 -   `propto`: to model shared evolutionary history across species assuming a proportional phylogenetic correlation matrix
 -   `equalto`: to incorporate sampling-errors variance-covariance 
@@ -455,7 +461,7 @@ Fit a phylogenetic meta-analysis in `glmmTMB` using two covariance structures:
 #| cache: true
 fit_phylo <- glmmTMB(yi ~ Nfixing-1 + 
                        (1 | experiment) + (1 | ACC) +
-                       (1 | species) + propto(0 + phylo|g, phylo.cor) + 
+                       (1 | species) + propto(0 + species|g, phylo.cor) + 
                        equalto(0 + id|g, V), 
                      data = ef, 
                      REML=TRUE)
@@ -525,10 +531,10 @@ We will use a social-science meta-analysis of 48 studies on school-based writing
 ```{r}
 dat <- dat.bangertdrowns2004
 dat$id <- as.factor(dat$id)
-dat$g <- 1
+dat$g <- rep(1, nrow(dat))
 ```
 
-Define `V` - the sampling error variance-covariance matrix:
+Define `V` - the sampling error variance-covariance matrix assuming a within-study correlation of 0.6:
 
 ```{r}
 V <- diag(dat$vi)
@@ -571,8 +577,7 @@ fit_ls_rma <- rma(yi, vi,
 ```
 
 
-
-----> Maybe add one more example of a large meta-analysis for a more complex model?
+By default `metafor` uses the variance for the scale, whereas `glmmTMB` uses the standard deviation. Hence, to compare both outputs we need to times by x2 the estimates from the `glmmTMB` model (given the scale model uses a log link).
 
 
 # Useful notes and links

@@ -102,9 +102,9 @@ simulate_lnrr <- function(
   for (i in seq_len(k)) {
     muT_true <- mu_C * exp(theta[i]) #true means of treated group for study i
     
-    # resample if a sample mean is noot positive (ln undefined)
+    # resample if a sample mean is not positive (ln undefined)
     repeat {
-      xT <- rnorm(n_T, mean = mu_Ti, sd = sigma)
+      xT <- rnorm(n_T, mean = muT_true, sd = sigma)
       xC <- rnorm(n_C, mean = mu_C,  sd = sigma)
       mT <- mean(xT); mC <- mean(xC)
       if (mT > 0 && mC > 0) break
@@ -149,11 +149,6 @@ simulate_lnrr <- function(
 # # check
 # c(max_abs_diff_yi = max(abs(out_lnrr$yi - esc$yi)),
 #   max_abs_diff_vi = max(abs(out_lnrr$vi - esc$vi)))
-# 
-# 
-# #save dataset
-# save(out_lnrr, file=here("data", "dat_lnrr.rdata"))
-
 
 ########## Function to simulate log odds ratios (OR) ############
 
