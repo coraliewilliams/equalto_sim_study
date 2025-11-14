@@ -433,7 +433,7 @@ plot_est_binom <- mu_hat_binom_plot + tau2_hat_binom_plot +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 
-ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 5, height = 10)
+ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 7, height = 11)
 
 
 
@@ -477,7 +477,7 @@ tau2_hat_pois_plot <- res_IRR2 |> ##use filtered IRR
   labs(
     x = TeX("$\\hat{\\tau^2}$ rma.glmm[IRR]"),
     y = TeX("$\\hat{\\tau^2}$ glmmTMB"),
-    title = "Poisson–Normal models agreement"
+    title = ""
   ) +
   theme_bw() +
   theme(legend.position = "none")
@@ -489,7 +489,7 @@ plot_est_poisson <- mu_hat_pois_plot / tau2_hat_pois_plot +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 
-ggsave(filename = "results/figures/Figure_poisson_res.pdf", width = 4, height = 10)
+ggsave(filename = "results/figures/Figure_poisson_res.pdf", width = 5, height = 10)
 
 
 
