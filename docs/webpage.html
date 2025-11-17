@@ -3245,13 +3245,8 @@ window.Quarto = {
   <li><a href="#changing-optimization-method" id="toc-changing-optimization-method" class="nav-link" data-scroll-target="#changing-optimization-method"><span class="header-section-number">3.1</span> Changing optimization method</a></li>
   <li><a href="#visualisation-and-plotting" id="toc-visualisation-and-plotting" class="nav-link" data-scroll-target="#visualisation-and-plotting"><span class="header-section-number">3.2</span> Visualisation and plotting</a></li>
   </ul></li>
-  <li><a href="#simulation-study" id="toc-simulation-study" class="nav-link" data-scroll-target="#simulation-study"><span class="header-section-number">4</span> Simulation study</a>
-  <ul class="collapse">
-  <li><a href="#simulation-parameters" id="toc-simulation-parameters" class="nav-link" data-scroll-target="#simulation-parameters"><span class="header-section-number">4.1</span> Simulation parameters</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="header-section-number">4.2</span> Results</a></li>
-  </ul></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">5</span> References</a></li>
-  <li><a href="#session-info" id="toc-session-info" class="nav-link" data-scroll-target="#session-info"><span class="header-section-number">6</span> Session info</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">4</span> References</a></li>
+  <li><a href="#session-info" id="toc-session-info" class="nav-link" data-scroll-target="#session-info"><span class="header-section-number">5</span> Session info</a></li>
   </ul>
 </nav>
 </div>
@@ -4069,10 +4064,9 @@ NfixingNo N-fixing neighbours 0.2995820  0.3594955 0.8333400 0.4046530</code></p
 <span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>                                       <span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> id), </span>
 <span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">R =</span> <span class="fu">list</span>(<span class="at">phylo =</span> phylo.cor),</span>
 <span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> ef,</span>
-<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">sparse =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">method=</span><span class="st">&quot;REML&quot;</span>) <span class="co">#default is REML</span></span>
-<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_phylo_rma)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">method=</span><span class="st">&quot;REML&quot;</span>) <span class="co">#default is REML</span></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_phylo_rma)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -4178,6 +4172,7 @@ Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&
 3 rma.mv_phylo_sparse     1322.50</code></pre>
 </div>
 </div>
+<p><a href="https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting">https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting</a></p>
 </section>
 <section id="location-scale-meta-analysis" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="location-scale-meta-analysis"><span class="header-section-number">2.3</span> Location-scale meta-analysis</h2>
@@ -4263,106 +4258,11 @@ ni          -0.004587144 0.002540198 -1.805821 0.070946268</code></pre>
 <section id="visualisation-and-plotting" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="visualisation-and-plotting"><span class="header-section-number">3.2</span> Visualisation and plotting</h2>
 <p>We can transform a <code>glmmTMB</code> model output into a <code>metafor</code> object to be able to use the visualisation tools available in <code>metafor</code> and <code>orchard</code> for example.</p>
-<p>[TO BE DONE]</p>
+<p>[IN PROGRESS]</p>
 </section>
 </section>
-<section id="simulation-study" class="level1" data-number="4">
-<h1 data-number="4"><span class="header-section-number">4</span> Simulation study</h1>
-<p>To assess <code>glmmTMB</code> we conducted a simulation study.</p>
-<p>We generated data given four effect size measures:</p>
-<ul>
-<li><p>Standardised Mean Difference (SMD)</p></li>
-<li><p>Log Response Ratio (lnRR)</p></li>
-<li><p>Odd ratio effect sizes (OR)</p></li>
-<li><p>Poisson meta-analysis to model incidence rate ratios (IRR)</p></li>
-</ul>
-<section id="simulation-parameters" class="level2" data-number="4.1">
-<h2 data-number="4.1" class="anchored" data-anchor-id="simulation-parameters"><span class="header-section-number">4.1</span> Simulation parameters</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 9%">
-<col style="width: 15%">
-<col style="width: 10%">
-<col style="width: 12%">
-<col style="width: 12%">
-<col style="width: 9%">
-<col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 7%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Measure</th>
-<th style="text-align: left;"><span class="math inline">\(\mu\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(\tau^2\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(\sigma_T\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(\sigma_C\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(\mu_C\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(n_T\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(n_C\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(t_T\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(t_C\)</span></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">SMD</td>
-<td style="text-align: left;"><span class="math inline">\(0.3\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(0.16\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(10\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(10\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(100\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lnRR</td>
-<td style="text-align: left;"><span class="math inline">\(\log(1.3)\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(0.16\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(10\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(10\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(100\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">OR</td>
-<td style="text-align: left;"><span class="math inline">\(\log(1.5)\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(0.16\)</span></td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">IRR</td>
-<td style="text-align: left;"><span class="math inline">\(\log(1.5)\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(0.16\)</span></td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(50\)</span></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="results" class="level2" data-number="4.2">
-<h2 data-number="4.2" class="anchored" data-anchor-id="results"><span class="header-section-number">4.2</span> Results</h2>
-</section>
-</section>
-<section id="references" class="level1" data-number="5">
-<h1 data-number="5"><span class="header-section-number">5</span> References</h1>
+<section id="references" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> References</h1>
 <p>Bangert-Drowns, R. L., Hurley, M. M., &amp; Wilkinson, B. (2004). <em>The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis</em>. Review of Educational Research, 74, 29-58.</p>
 <p>Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). <em>Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature</em>. Journal of the American Medical Association, 271(9), 698–702. <a href="https://doi.org/10.1001/jama.1994.03510330076038" class="uri">https://doi.org/10.1001/jama.1994.03510330076038</a></p>
 <p>Felix, J. A., Stevenson, P. C., &amp; Koricheva, J. (2023). <em>Plant neighbourhood diversity effects on leaf traits: A meta-analysis</em>. Functional Ecology, 37(12), 3150–3163. <a href="https://doi.org/10.1111/1365-2435.14441" class="uri">https://doi.org/10.1111/1365-2435.14441</a></p>
@@ -4370,8 +4270,8 @@ ni          -0.004587144 0.002540198 -1.805821 0.070946268</code></pre>
 <p>Viechtbauer,W.,&amp;López-López, J.A. (2022). <em>Location-scale models for meta-analysis</em>. Research Synthesis Methods, 13(6), 697–715. <a href="https://doi.org/10.1002/jrsm.1562" class="uri">https://doi.org/10.1002/jrsm.1562</a></p>
 <p>White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). <em>metadat: Meta-Analysis Datasets</em>. R package version 1.2-0, <a href="https://CRAN.R-project.org/package=metadat" class="uri">https://CRAN.R-project.org/package=metadat</a>.</p>
 </section>
-<section id="session-info" class="level1" data-number="6">
-<h1 data-number="6"><span class="header-section-number">6</span> Session info</h1>
+<section id="session-info" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Session info</h1>
 <div class="cell" data-layout-align="center" data-warnings="false">
 <details open class="code-fold">
 <summary>Code</summary>
@@ -4396,7 +4296,7 @@ ni          -0.004587144 0.002540198 -1.805821 0.070946268</code></pre>
 <span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a> collate  English_Australia.utf8</span>
 <span id="cb55-10"><a href="#cb55-10" aria-hidden="true" tabindex="-1"></a> ctype    English_Australia.utf8</span>
 <span id="cb55-11"><a href="#cb55-11" aria-hidden="true" tabindex="-1"></a> tz       Australia<span class="sc">/</span>Sydney</span>
-<span id="cb55-12"><a href="#cb55-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2025-11-16</span></span>
+<span id="cb55-12"><a href="#cb55-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2025-11-17</span></span>
 <span id="cb55-13"><a href="#cb55-13" aria-hidden="true" tabindex="-1"></a> pandoc   <span class="dv">3</span>.<span class="fl">6.3</span> <span class="sc">@</span> C<span class="sc">:</span><span class="er">/</span>Program Files<span class="sc">/</span>RStudio<span class="sc">/</span>resources<span class="sc">/</span>app<span class="sc">/</span>bin<span class="sc">/</span>quarto<span class="sc">/</span>bin<span class="sc">/</span>tools<span class="sc">/</span> (via rmarkdown)</span>
 <span id="cb55-14"><a href="#cb55-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb55-15"><a href="#cb55-15" aria-hidden="true" tabindex="-1"></a>─ Packages ───────────────────────────────────────────────────────────────────</span>
@@ -5477,221 +5377,192 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb56-553"><a href="#cb56-553" aria-hidden="true" tabindex="-1"></a>                                       <span class="sc">~</span><span class="dv">1</span> <span class="sc">|</span> id), </span>
 <span id="cb56-554"><a href="#cb56-554" aria-hidden="true" tabindex="-1"></a>                        <span class="at">R =</span> <span class="fu">list</span>(<span class="at">phylo =</span> phylo.cor),</span>
 <span id="cb56-555"><a href="#cb56-555" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> ef,</span>
-<span id="cb56-556"><a href="#cb56-556" aria-hidden="true" tabindex="-1"></a>                        <span class="at">sparse =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb56-557"><a href="#cb56-557" aria-hidden="true" tabindex="-1"></a>                        <span class="at">method=</span><span class="st">&quot;REML&quot;</span>) <span class="co">#default is REML</span></span>
-<span id="cb56-558"><a href="#cb56-558" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-559"><a href="#cb56-559" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_phylo_rma)</span>
-<span id="cb56-560"><a href="#cb56-560" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb56-561"><a href="#cb56-561" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-562"><a href="#cb56-562" aria-hidden="true" tabindex="-1"></a>We can store time and compare with <span class="in">`metafor`</span> with and without using the argument <span class="in">`sparse=TRUE`</span> which helps speed up computational speed:</span>
-<span id="cb56-563"><a href="#cb56-563" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-566"><a href="#cb56-566" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-567"><a href="#cb56-567" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: true</span></span>
-<span id="cb56-568"><a href="#cb56-568" aria-hidden="true" tabindex="-1"></a><span class="do">## Fit glmmTMB model and store runtime</span></span>
-<span id="cb56-569"><a href="#cb56-569" aria-hidden="true" tabindex="-1"></a>time_glmmTMB <span class="ot">&lt;-</span> <span class="fu">system.time</span>(</span>
-<span id="cb56-570"><a href="#cb56-570" aria-hidden="true" tabindex="-1"></a>  fit_phylo <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
-<span id="cb56-571"><a href="#cb56-571" aria-hidden="true" tabindex="-1"></a>    yi <span class="sc">~</span> Nfixing <span class="sc">-</span> <span class="dv">1</span> <span class="sc">+</span></span>
-<span id="cb56-572"><a href="#cb56-572" aria-hidden="true" tabindex="-1"></a>      (<span class="dv">1</span> <span class="sc">|</span> experiment) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> ACC) <span class="sc">+</span></span>
-<span id="cb56-573"><a href="#cb56-573" aria-hidden="true" tabindex="-1"></a>      (<span class="dv">1</span> <span class="sc">|</span> species) <span class="sc">+</span></span>
-<span id="cb56-574"><a href="#cb56-574" aria-hidden="true" tabindex="-1"></a>      <span class="fu">propto</span>(<span class="dv">0</span> <span class="sc">+</span> phylo <span class="sc">|</span> g, phylo.cor) <span class="sc">+</span></span>
-<span id="cb56-575"><a href="#cb56-575" aria-hidden="true" tabindex="-1"></a>      <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> id <span class="sc">|</span> g, V),</span>
-<span id="cb56-576"><a href="#cb56-576" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> ef,</span>
-<span id="cb56-577"><a href="#cb56-577" aria-hidden="true" tabindex="-1"></a>    <span class="at">REML =</span> <span class="cn">TRUE</span></span>
-<span id="cb56-578"><a href="#cb56-578" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb56-579"><a href="#cb56-579" aria-hidden="true" tabindex="-1"></a>)[[<span class="st">&quot;elapsed&quot;</span>]]</span>
-<span id="cb56-580"><a href="#cb56-580" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-581"><a href="#cb56-581" aria-hidden="true" tabindex="-1"></a><span class="do">## Fit rma.mv model and store runtime</span></span>
-<span id="cb56-582"><a href="#cb56-582" aria-hidden="true" tabindex="-1"></a>time_rma <span class="ot">&lt;-</span> <span class="fu">system.time</span>(</span>
-<span id="cb56-583"><a href="#cb56-583" aria-hidden="true" tabindex="-1"></a>  fit_phylo_rma <span class="ot">&lt;-</span> <span class="fu">rma.mv</span>(</span>
-<span id="cb56-584"><a href="#cb56-584" aria-hidden="true" tabindex="-1"></a>    yi, vi,</span>
-<span id="cb56-585"><a href="#cb56-585" aria-hidden="true" tabindex="-1"></a>    <span class="at">mods   =</span> <span class="sc">~</span> Nfixing <span class="sc">-</span> <span class="dv">1</span>,</span>
-<span id="cb56-586"><a href="#cb56-586" aria-hidden="true" tabindex="-1"></a>    <span class="at">random =</span> <span class="fu">list</span>(</span>
-<span id="cb56-587"><a href="#cb56-587" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> experiment,</span>
-<span id="cb56-588"><a href="#cb56-588" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> ACC,</span>
-<span id="cb56-589"><a href="#cb56-589" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species,</span>
-<span id="cb56-590"><a href="#cb56-590" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> phylo,</span>
-<span id="cb56-591"><a href="#cb56-591" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> id</span>
-<span id="cb56-592"><a href="#cb56-592" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb56-593"><a href="#cb56-593" aria-hidden="true" tabindex="-1"></a>    <span class="at">R      =</span> <span class="fu">list</span>(<span class="at">phylo =</span> phylo.cor),</span>
-<span id="cb56-594"><a href="#cb56-594" aria-hidden="true" tabindex="-1"></a>    <span class="at">data   =</span> ef,</span>
-<span id="cb56-595"><a href="#cb56-595" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;REML&quot;</span></span>
-<span id="cb56-596"><a href="#cb56-596" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb56-597"><a href="#cb56-597" aria-hidden="true" tabindex="-1"></a>)[[<span class="st">&quot;elapsed&quot;</span>]]</span>
-<span id="cb56-598"><a href="#cb56-598" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-599"><a href="#cb56-599" aria-hidden="true" tabindex="-1"></a><span class="do">## Fit rma.mv model and store runtime</span></span>
-<span id="cb56-600"><a href="#cb56-600" aria-hidden="true" tabindex="-1"></a>time_rma_sparse <span class="ot">&lt;-</span> <span class="fu">system.time</span>(</span>
-<span id="cb56-601"><a href="#cb56-601" aria-hidden="true" tabindex="-1"></a>  fit_phylo_rma <span class="ot">&lt;-</span> <span class="fu">rma.mv</span>(</span>
-<span id="cb56-602"><a href="#cb56-602" aria-hidden="true" tabindex="-1"></a>    yi, vi,</span>
-<span id="cb56-603"><a href="#cb56-603" aria-hidden="true" tabindex="-1"></a>    <span class="at">mods   =</span> <span class="sc">~</span> Nfixing <span class="sc">-</span> <span class="dv">1</span>,</span>
-<span id="cb56-604"><a href="#cb56-604" aria-hidden="true" tabindex="-1"></a>    <span class="at">random =</span> <span class="fu">list</span>(</span>
-<span id="cb56-605"><a href="#cb56-605" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> experiment,</span>
-<span id="cb56-606"><a href="#cb56-606" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> ACC,</span>
-<span id="cb56-607"><a href="#cb56-607" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species,</span>
-<span id="cb56-608"><a href="#cb56-608" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> phylo,</span>
-<span id="cb56-609"><a href="#cb56-609" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> id</span>
-<span id="cb56-610"><a href="#cb56-610" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb56-611"><a href="#cb56-611" aria-hidden="true" tabindex="-1"></a>    <span class="at">R      =</span> <span class="fu">list</span>(<span class="at">phylo =</span> phylo.cor),</span>
-<span id="cb56-612"><a href="#cb56-612" aria-hidden="true" tabindex="-1"></a>    <span class="at">data   =</span> ef,</span>
-<span id="cb56-613"><a href="#cb56-613" aria-hidden="true" tabindex="-1"></a>    <span class="at">sparse =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb56-614"><a href="#cb56-614" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;REML&quot;</span></span>
-<span id="cb56-615"><a href="#cb56-615" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb56-616"><a href="#cb56-616" aria-hidden="true" tabindex="-1"></a>)[[<span class="st">&quot;elapsed&quot;</span>]]</span>
-<span id="cb56-617"><a href="#cb56-617" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-618"><a href="#cb56-618" aria-hidden="true" tabindex="-1"></a><span class="do">## Put runtimes into a tidy object</span></span>
-<span id="cb56-619"><a href="#cb56-619" aria-hidden="true" tabindex="-1"></a>runtime_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb56-620"><a href="#cb56-620" aria-hidden="true" tabindex="-1"></a>  <span class="at">model       =</span> <span class="fu">c</span>(<span class="st">&quot;glmmTMB_phylo&quot;</span>, <span class="st">&quot;rma.mv_phylo&quot;</span>, <span class="st">&quot;rma.mv_phylo_sparse&quot;</span>),</span>
-<span id="cb56-621"><a href="#cb56-621" aria-hidden="true" tabindex="-1"></a>  <span class="at">runtime_sec =</span> <span class="fu">c</span>(time_glmmTMB, time_rma, time_rma_sparse)</span>
-<span id="cb56-622"><a href="#cb56-622" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb56-623"><a href="#cb56-623" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-624"><a href="#cb56-624" aria-hidden="true" tabindex="-1"></a>runtime_df</span>
-<span id="cb56-625"><a href="#cb56-625" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-556"><a href="#cb56-556" aria-hidden="true" tabindex="-1"></a>                        <span class="at">method=</span><span class="st">&quot;REML&quot;</span>) <span class="co">#default is REML</span></span>
+<span id="cb56-557"><a href="#cb56-557" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-558"><a href="#cb56-558" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_phylo_rma)</span>
+<span id="cb56-559"><a href="#cb56-559" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-560"><a href="#cb56-560" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-561"><a href="#cb56-561" aria-hidden="true" tabindex="-1"></a>We can store time and compare with <span class="in">`metafor`</span> with and without using the argument <span class="in">`sparse=TRUE`</span> which helps speed up computational speed:</span>
+<span id="cb56-562"><a href="#cb56-562" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-565"><a href="#cb56-565" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-566"><a href="#cb56-566" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: true</span></span>
+<span id="cb56-567"><a href="#cb56-567" aria-hidden="true" tabindex="-1"></a><span class="do">## Fit glmmTMB model and store runtime</span></span>
+<span id="cb56-568"><a href="#cb56-568" aria-hidden="true" tabindex="-1"></a>time_glmmTMB <span class="ot">&lt;-</span> <span class="fu">system.time</span>(</span>
+<span id="cb56-569"><a href="#cb56-569" aria-hidden="true" tabindex="-1"></a>  fit_phylo <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb56-570"><a href="#cb56-570" aria-hidden="true" tabindex="-1"></a>    yi <span class="sc">~</span> Nfixing <span class="sc">-</span> <span class="dv">1</span> <span class="sc">+</span></span>
+<span id="cb56-571"><a href="#cb56-571" aria-hidden="true" tabindex="-1"></a>      (<span class="dv">1</span> <span class="sc">|</span> experiment) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> ACC) <span class="sc">+</span></span>
+<span id="cb56-572"><a href="#cb56-572" aria-hidden="true" tabindex="-1"></a>      (<span class="dv">1</span> <span class="sc">|</span> species) <span class="sc">+</span></span>
+<span id="cb56-573"><a href="#cb56-573" aria-hidden="true" tabindex="-1"></a>      <span class="fu">propto</span>(<span class="dv">0</span> <span class="sc">+</span> phylo <span class="sc">|</span> g, phylo.cor) <span class="sc">+</span></span>
+<span id="cb56-574"><a href="#cb56-574" aria-hidden="true" tabindex="-1"></a>      <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> id <span class="sc">|</span> g, V),</span>
+<span id="cb56-575"><a href="#cb56-575" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> ef,</span>
+<span id="cb56-576"><a href="#cb56-576" aria-hidden="true" tabindex="-1"></a>    <span class="at">REML =</span> <span class="cn">TRUE</span></span>
+<span id="cb56-577"><a href="#cb56-577" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb56-578"><a href="#cb56-578" aria-hidden="true" tabindex="-1"></a>)[[<span class="st">&quot;elapsed&quot;</span>]]</span>
+<span id="cb56-579"><a href="#cb56-579" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-580"><a href="#cb56-580" aria-hidden="true" tabindex="-1"></a><span class="do">## Fit rma.mv model and store runtime</span></span>
+<span id="cb56-581"><a href="#cb56-581" aria-hidden="true" tabindex="-1"></a>time_rma <span class="ot">&lt;-</span> <span class="fu">system.time</span>(</span>
+<span id="cb56-582"><a href="#cb56-582" aria-hidden="true" tabindex="-1"></a>  fit_phylo_rma <span class="ot">&lt;-</span> <span class="fu">rma.mv</span>(</span>
+<span id="cb56-583"><a href="#cb56-583" aria-hidden="true" tabindex="-1"></a>    yi, vi,</span>
+<span id="cb56-584"><a href="#cb56-584" aria-hidden="true" tabindex="-1"></a>    <span class="at">mods   =</span> <span class="sc">~</span> Nfixing <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb56-585"><a href="#cb56-585" aria-hidden="true" tabindex="-1"></a>    <span class="at">random =</span> <span class="fu">list</span>(</span>
+<span id="cb56-586"><a href="#cb56-586" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> experiment,</span>
+<span id="cb56-587"><a href="#cb56-587" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> ACC,</span>
+<span id="cb56-588"><a href="#cb56-588" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species,</span>
+<span id="cb56-589"><a href="#cb56-589" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> phylo,</span>
+<span id="cb56-590"><a href="#cb56-590" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> id</span>
+<span id="cb56-591"><a href="#cb56-591" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb56-592"><a href="#cb56-592" aria-hidden="true" tabindex="-1"></a>    <span class="at">R      =</span> <span class="fu">list</span>(<span class="at">phylo =</span> phylo.cor),</span>
+<span id="cb56-593"><a href="#cb56-593" aria-hidden="true" tabindex="-1"></a>    <span class="at">data   =</span> ef,</span>
+<span id="cb56-594"><a href="#cb56-594" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;REML&quot;</span></span>
+<span id="cb56-595"><a href="#cb56-595" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb56-596"><a href="#cb56-596" aria-hidden="true" tabindex="-1"></a>)[[<span class="st">&quot;elapsed&quot;</span>]]</span>
+<span id="cb56-597"><a href="#cb56-597" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-598"><a href="#cb56-598" aria-hidden="true" tabindex="-1"></a><span class="do">## Fit rma.mv model and store runtime</span></span>
+<span id="cb56-599"><a href="#cb56-599" aria-hidden="true" tabindex="-1"></a>time_rma_sparse <span class="ot">&lt;-</span> <span class="fu">system.time</span>(</span>
+<span id="cb56-600"><a href="#cb56-600" aria-hidden="true" tabindex="-1"></a>  fit_phylo_rma <span class="ot">&lt;-</span> <span class="fu">rma.mv</span>(</span>
+<span id="cb56-601"><a href="#cb56-601" aria-hidden="true" tabindex="-1"></a>    yi, vi,</span>
+<span id="cb56-602"><a href="#cb56-602" aria-hidden="true" tabindex="-1"></a>    <span class="at">mods   =</span> <span class="sc">~</span> Nfixing <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb56-603"><a href="#cb56-603" aria-hidden="true" tabindex="-1"></a>    <span class="at">random =</span> <span class="fu">list</span>(</span>
+<span id="cb56-604"><a href="#cb56-604" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> experiment,</span>
+<span id="cb56-605"><a href="#cb56-605" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> ACC,</span>
+<span id="cb56-606"><a href="#cb56-606" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> species,</span>
+<span id="cb56-607"><a href="#cb56-607" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> phylo,</span>
+<span id="cb56-608"><a href="#cb56-608" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> id</span>
+<span id="cb56-609"><a href="#cb56-609" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb56-610"><a href="#cb56-610" aria-hidden="true" tabindex="-1"></a>    <span class="at">R      =</span> <span class="fu">list</span>(<span class="at">phylo =</span> phylo.cor),</span>
+<span id="cb56-611"><a href="#cb56-611" aria-hidden="true" tabindex="-1"></a>    <span class="at">data   =</span> ef,</span>
+<span id="cb56-612"><a href="#cb56-612" aria-hidden="true" tabindex="-1"></a>    <span class="at">sparse =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb56-613"><a href="#cb56-613" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;REML&quot;</span></span>
+<span id="cb56-614"><a href="#cb56-614" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb56-615"><a href="#cb56-615" aria-hidden="true" tabindex="-1"></a>)[[<span class="st">&quot;elapsed&quot;</span>]]</span>
+<span id="cb56-616"><a href="#cb56-616" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-617"><a href="#cb56-617" aria-hidden="true" tabindex="-1"></a><span class="do">## Put runtimes into a tidy object</span></span>
+<span id="cb56-618"><a href="#cb56-618" aria-hidden="true" tabindex="-1"></a>runtime_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb56-619"><a href="#cb56-619" aria-hidden="true" tabindex="-1"></a>  <span class="at">model       =</span> <span class="fu">c</span>(<span class="st">&quot;glmmTMB_phylo&quot;</span>, <span class="st">&quot;rma.mv_phylo&quot;</span>, <span class="st">&quot;rma.mv_phylo_sparse&quot;</span>),</span>
+<span id="cb56-620"><a href="#cb56-620" aria-hidden="true" tabindex="-1"></a>  <span class="at">runtime_sec =</span> <span class="fu">c</span>(time_glmmTMB, time_rma, time_rma_sparse)</span>
+<span id="cb56-621"><a href="#cb56-621" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb56-622"><a href="#cb56-622" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-623"><a href="#cb56-623" aria-hidden="true" tabindex="-1"></a>runtime_df</span>
+<span id="cb56-624"><a href="#cb56-624" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-625"><a href="#cb56-625" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb56-626"><a href="#cb56-626" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb56-627"><a href="#cb56-627" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-628"><a href="#cb56-628" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-628"><a href="#cb56-628" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting</span><span class="co">](https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting)</span></span>
 <span id="cb56-629"><a href="#cb56-629" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-630"><a href="#cb56-630" aria-hidden="true" tabindex="-1"></a><span class="fu">## Location-scale meta-analysis</span></span>
-<span id="cb56-631"><a href="#cb56-631" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-632"><a href="#cb56-632" aria-hidden="true" tabindex="-1"></a>In a standard random-effects meta-analysis, the between-study variance $\tau^2$ is assumed constant across studies. This is often unrealistic. **Location–scale models** relax this assumption by modelling both the *location* (the mean effect) and the *scale* (the amount of heterogeneity) as functions of study-level moderators. In practice, you can include different predictors in the mean and variance parts to test whether heterogeneity varies with study features (e.g., outcome type, design) or differs across subgroups. This yields a more flexible meta-analytic model that can explain, not just accommodate, between-study variability.</span>
-<span id="cb56-633"><a href="#cb56-633" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-634"><a href="#cb56-634" aria-hidden="true" tabindex="-1"></a>We will use a social-science meta-analysis of 48 studies on school-based writing-to-learn interventions. Each study contrasts an intervention group (greater emphasis on writing tasks) with a control group. The effect size measures used in this dataset is the *standardised mean differences*, where positive values indicate better academic performance under the intervention.</span>
-<span id="cb56-635"><a href="#cb56-635" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-638"><a href="#cb56-638" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-639"><a href="#cb56-639" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> dat.bangertdrowns2004</span>
-<span id="cb56-640"><a href="#cb56-640" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(dat<span class="sc">$</span>id)</span>
-<span id="cb56-641"><a href="#cb56-641" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>g <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="fu">nrow</span>(dat))</span>
-<span id="cb56-642"><a href="#cb56-642" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb56-643"><a href="#cb56-643" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-644"><a href="#cb56-644" aria-hidden="true" tabindex="-1"></a>Define <span class="in">`V`</span> - the sampling error variance-covariance matrix assuming a within-study correlation of 0.6:</span>
-<span id="cb56-645"><a href="#cb56-645" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-648"><a href="#cb56-648" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-649"><a href="#cb56-649" aria-hidden="true" tabindex="-1"></a>V <span class="ot">&lt;-</span> <span class="fu">diag</span>(dat<span class="sc">$</span>vi)</span>
-<span id="cb56-650"><a href="#cb56-650" aria-hidden="true" tabindex="-1"></a><span class="fu">row.names</span>(V) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(V) <span class="ot">&lt;-</span> <span class="fu">levels</span>(dat<span class="sc">$</span>id)</span>
-<span id="cb56-651"><a href="#cb56-651" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb56-652"><a href="#cb56-652" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-653"><a href="#cb56-653" aria-hidden="true" tabindex="-1"></a>We fit a simple location-scale meta-analysis modelling the study sample size variable (<span class="in">`ni`</span>) in the location and scale parts. We use <span class="in">`dispformula`</span> in <span class="in">`glmmTMB`</span> to specify the scale part of the model. </span>
-<span id="cb56-654"><a href="#cb56-654" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-657"><a href="#cb56-657" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-658"><a href="#cb56-658" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: &quot;hide&quot;    </span></span>
-<span id="cb56-659"><a href="#cb56-659" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false     </span></span>
-<span id="cb56-660"><a href="#cb56-660" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false   </span></span>
-<span id="cb56-661"><a href="#cb56-661" aria-hidden="true" tabindex="-1"></a>fit_ls <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(yi <span class="sc">~</span> ni <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> id<span class="sc">|</span>g, V),</span>
-<span id="cb56-662"><a href="#cb56-662" aria-hidden="true" tabindex="-1"></a>                  <span class="at">dispformula =</span> <span class="sc">~</span> ni,</span>
-<span id="cb56-663"><a href="#cb56-663" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> dat,</span>
-<span id="cb56-664"><a href="#cb56-664" aria-hidden="true" tabindex="-1"></a>                  <span class="at">REML =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb56-665"><a href="#cb56-665" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb56-666"><a href="#cb56-666" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-667"><a href="#cb56-667" aria-hidden="true" tabindex="-1"></a>View the estimates of the location-part of the model:</span>
-<span id="cb56-668"><a href="#cb56-668" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-671"><a href="#cb56-671" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-672"><a href="#cb56-672" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_ls)<span class="sc">$</span>coefficients<span class="sc">$</span>cond</span>
-<span id="cb56-673"><a href="#cb56-673" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb56-674"><a href="#cb56-674" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-675"><a href="#cb56-675" aria-hidden="true" tabindex="-1"></a>View the estimates of the scale-part of the model:</span>
-<span id="cb56-676"><a href="#cb56-676" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-679"><a href="#cb56-679" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-680"><a href="#cb56-680" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_ls)<span class="sc">$</span>coefficients<span class="sc">$</span>disp</span>
-<span id="cb56-681"><a href="#cb56-681" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb56-682"><a href="#cb56-682" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-630"><a href="#cb56-630" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-631"><a href="#cb56-631" aria-hidden="true" tabindex="-1"></a><span class="fu">## Location-scale meta-analysis</span></span>
+<span id="cb56-632"><a href="#cb56-632" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-633"><a href="#cb56-633" aria-hidden="true" tabindex="-1"></a>In a standard random-effects meta-analysis, the between-study variance $\tau^2$ is assumed constant across studies. This is often unrealistic. **Location–scale models** relax this assumption by modelling both the *location* (the mean effect) and the *scale* (the amount of heterogeneity) as functions of study-level moderators. In practice, you can include different predictors in the mean and variance parts to test whether heterogeneity varies with study features (e.g., outcome type, design) or differs across subgroups. This yields a more flexible meta-analytic model that can explain, not just accommodate, between-study variability.</span>
+<span id="cb56-634"><a href="#cb56-634" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-635"><a href="#cb56-635" aria-hidden="true" tabindex="-1"></a>We will use a social-science meta-analysis of 48 studies on school-based writing-to-learn interventions. Each study contrasts an intervention group (greater emphasis on writing tasks) with a control group. The effect size measures used in this dataset is the *standardised mean differences*, where positive values indicate better academic performance under the intervention.</span>
+<span id="cb56-636"><a href="#cb56-636" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-639"><a href="#cb56-639" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-640"><a href="#cb56-640" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> dat.bangertdrowns2004</span>
+<span id="cb56-641"><a href="#cb56-641" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(dat<span class="sc">$</span>id)</span>
+<span id="cb56-642"><a href="#cb56-642" aria-hidden="true" tabindex="-1"></a>dat<span class="sc">$</span>g <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="fu">nrow</span>(dat))</span>
+<span id="cb56-643"><a href="#cb56-643" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-644"><a href="#cb56-644" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-645"><a href="#cb56-645" aria-hidden="true" tabindex="-1"></a>Define <span class="in">`V`</span> - the sampling error variance-covariance matrix assuming a within-study correlation of 0.6:</span>
+<span id="cb56-646"><a href="#cb56-646" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-649"><a href="#cb56-649" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-650"><a href="#cb56-650" aria-hidden="true" tabindex="-1"></a>V <span class="ot">&lt;-</span> <span class="fu">diag</span>(dat<span class="sc">$</span>vi)</span>
+<span id="cb56-651"><a href="#cb56-651" aria-hidden="true" tabindex="-1"></a><span class="fu">row.names</span>(V) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(V) <span class="ot">&lt;-</span> <span class="fu">levels</span>(dat<span class="sc">$</span>id)</span>
+<span id="cb56-652"><a href="#cb56-652" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-653"><a href="#cb56-653" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-654"><a href="#cb56-654" aria-hidden="true" tabindex="-1"></a>We fit a simple location-scale meta-analysis modelling the study sample size variable (<span class="in">`ni`</span>) in the location and scale parts. We use <span class="in">`dispformula`</span> in <span class="in">`glmmTMB`</span> to specify the scale part of the model. </span>
+<span id="cb56-655"><a href="#cb56-655" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-658"><a href="#cb56-658" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-659"><a href="#cb56-659" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: &quot;hide&quot;    </span></span>
+<span id="cb56-660"><a href="#cb56-660" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false     </span></span>
+<span id="cb56-661"><a href="#cb56-661" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false   </span></span>
+<span id="cb56-662"><a href="#cb56-662" aria-hidden="true" tabindex="-1"></a>fit_ls <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(yi <span class="sc">~</span> ni <span class="sc">+</span> <span class="fu">equalto</span>(<span class="dv">0</span> <span class="sc">+</span> id<span class="sc">|</span>g, V),</span>
+<span id="cb56-663"><a href="#cb56-663" aria-hidden="true" tabindex="-1"></a>                  <span class="at">dispformula =</span> <span class="sc">~</span> ni,</span>
+<span id="cb56-664"><a href="#cb56-664" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> dat,</span>
+<span id="cb56-665"><a href="#cb56-665" aria-hidden="true" tabindex="-1"></a>                  <span class="at">REML =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb56-666"><a href="#cb56-666" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-667"><a href="#cb56-667" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-668"><a href="#cb56-668" aria-hidden="true" tabindex="-1"></a>View the estimates of the location-part of the model:</span>
+<span id="cb56-669"><a href="#cb56-669" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-672"><a href="#cb56-672" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-673"><a href="#cb56-673" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_ls)<span class="sc">$</span>coefficients<span class="sc">$</span>cond</span>
+<span id="cb56-674"><a href="#cb56-674" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-675"><a href="#cb56-675" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-676"><a href="#cb56-676" aria-hidden="true" tabindex="-1"></a>View the estimates of the scale-part of the model:</span>
+<span id="cb56-677"><a href="#cb56-677" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-680"><a href="#cb56-680" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-681"><a href="#cb56-681" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_ls)<span class="sc">$</span>coefficients<span class="sc">$</span>disp</span>
+<span id="cb56-682"><a href="#cb56-682" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb56-683"><a href="#cb56-683" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-684"><a href="#cb56-684" aria-hidden="true" tabindex="-1"></a>We can fit the same model with <span class="in">`metafor`</span> with the <span class="in">`rma`</span> function and using the <span class="in">`scale`</span> argument:</span>
-<span id="cb56-685"><a href="#cb56-685" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-688"><a href="#cb56-688" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-689"><a href="#cb56-689" aria-hidden="true" tabindex="-1"></a>fit_ls_rma <span class="ot">&lt;-</span> <span class="fu">rma</span>(yi, vi, </span>
-<span id="cb56-690"><a href="#cb56-690" aria-hidden="true" tabindex="-1"></a>                  <span class="at">mods =</span> <span class="sc">~</span> ni,</span>
-<span id="cb56-691"><a href="#cb56-691" aria-hidden="true" tabindex="-1"></a>                  <span class="at">scale =</span> <span class="sc">~</span> ni,</span>
-<span id="cb56-692"><a href="#cb56-692" aria-hidden="true" tabindex="-1"></a>                  <span class="at">control=</span><span class="fu">list</span>(<span class="at">REMLf=</span><span class="cn">FALSE</span>), <span class="co">#this is to get the same log-likelihood</span></span>
-<span id="cb56-693"><a href="#cb56-693" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> dat)</span>
-<span id="cb56-694"><a href="#cb56-694" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb56-695"><a href="#cb56-695" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-684"><a href="#cb56-684" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-685"><a href="#cb56-685" aria-hidden="true" tabindex="-1"></a>We can fit the same model with <span class="in">`metafor`</span> with the <span class="in">`rma`</span> function and using the <span class="in">`scale`</span> argument:</span>
+<span id="cb56-686"><a href="#cb56-686" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-689"><a href="#cb56-689" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-690"><a href="#cb56-690" aria-hidden="true" tabindex="-1"></a>fit_ls_rma <span class="ot">&lt;-</span> <span class="fu">rma</span>(yi, vi, </span>
+<span id="cb56-691"><a href="#cb56-691" aria-hidden="true" tabindex="-1"></a>                  <span class="at">mods =</span> <span class="sc">~</span> ni,</span>
+<span id="cb56-692"><a href="#cb56-692" aria-hidden="true" tabindex="-1"></a>                  <span class="at">scale =</span> <span class="sc">~</span> ni,</span>
+<span id="cb56-693"><a href="#cb56-693" aria-hidden="true" tabindex="-1"></a>                  <span class="at">control=</span><span class="fu">list</span>(<span class="at">REMLf=</span><span class="cn">FALSE</span>), <span class="co">#this is to get the same log-likelihood</span></span>
+<span id="cb56-694"><a href="#cb56-694" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> dat)</span>
+<span id="cb56-695"><a href="#cb56-695" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb56-696"><a href="#cb56-696" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-697"><a href="#cb56-697" aria-hidden="true" tabindex="-1"></a>By default <span class="in">`metafor`</span> uses the variance for the scale, whereas <span class="in">`glmmTMB`</span> uses the standard deviation. Hence, to compare both outputs we need to times by x2 the estimates from the <span class="in">`glmmTMB`</span> model (given the scale model uses a log link).</span>
-<span id="cb56-698"><a href="#cb56-698" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-697"><a href="#cb56-697" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-698"><a href="#cb56-698" aria-hidden="true" tabindex="-1"></a>By default <span class="in">`metafor`</span> uses the variance for the scale, whereas <span class="in">`glmmTMB`</span> uses the standard deviation. Hence, to compare both outputs we need to times by x2 the estimates from the <span class="in">`glmmTMB`</span> model (given the scale model uses a log link).</span>
 <span id="cb56-699"><a href="#cb56-699" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-700"><a href="#cb56-700" aria-hidden="true" tabindex="-1"></a><span class="fu"># Useful notes and links</span></span>
-<span id="cb56-701"><a href="#cb56-701" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-702"><a href="#cb56-702" aria-hidden="true" tabindex="-1"></a><span class="fu">## Changing optimization method</span></span>
-<span id="cb56-703"><a href="#cb56-703" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-704"><a href="#cb56-704" aria-hidden="true" tabindex="-1"></a>We can change the optimization method using by modifying the <span class="in">`control = glmmTMBControl()`</span> argument. By default, <span class="in">`glmmTMB`</span> uses the <span class="in">`nlminb`</span> non-linear optimizer for parameter estimation. </span>
-<span id="cb56-705"><a href="#cb56-705" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-700"><a href="#cb56-700" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-701"><a href="#cb56-701" aria-hidden="true" tabindex="-1"></a><span class="fu"># Useful notes and links</span></span>
+<span id="cb56-702"><a href="#cb56-702" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-703"><a href="#cb56-703" aria-hidden="true" tabindex="-1"></a><span class="fu">## Changing optimization method</span></span>
+<span id="cb56-704"><a href="#cb56-704" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-705"><a href="#cb56-705" aria-hidden="true" tabindex="-1"></a>We can change the optimization method using by modifying the <span class="in">`control = glmmTMBControl()`</span> argument. By default, <span class="in">`glmmTMB`</span> uses the <span class="in">`nlminb`</span> non-linear optimizer for parameter estimation. </span>
 <span id="cb56-706"><a href="#cb56-706" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb56-707"><a href="#cb56-707" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-708"><a href="#cb56-708" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Troubleshooting with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)</span></span>
-<span id="cb56-709"><a href="#cb56-709" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-710"><a href="#cb56-710" aria-hidden="true" tabindex="-1"></a><span class="in">`control=glmmTMBControl(optimizer=optim, optArgs=list(method=&quot;BFGS&quot;))`</span></span>
-<span id="cb56-711"><a href="#cb56-711" aria-hidden="true" tabindex="-1"></a><span class="in">`control = list(REMLf=FALSE, optimizer = &quot;BFGS&quot;))`</span></span>
-<span id="cb56-712"><a href="#cb56-712" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-713"><a href="#cb56-713" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Troubleshooting with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)</span></span>
-<span id="cb56-714"><a href="#cb56-714" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-708"><a href="#cb56-708" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-709"><a href="#cb56-709" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Troubleshooting with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)</span></span>
+<span id="cb56-710"><a href="#cb56-710" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-711"><a href="#cb56-711" aria-hidden="true" tabindex="-1"></a><span class="in">`control=glmmTMBControl(optimizer=optim, optArgs=list(method=&quot;BFGS&quot;))`</span></span>
+<span id="cb56-712"><a href="#cb56-712" aria-hidden="true" tabindex="-1"></a><span class="in">`control = list(REMLf=FALSE, optimizer = &quot;BFGS&quot;))`</span></span>
+<span id="cb56-713"><a href="#cb56-713" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-714"><a href="#cb56-714" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Troubleshooting with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)</span></span>
 <span id="cb56-715"><a href="#cb56-715" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb56-716"><a href="#cb56-716" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-717"><a href="#cb56-717" aria-hidden="true" tabindex="-1"></a><span class="fu">## Visualisation and plotting</span></span>
-<span id="cb56-718"><a href="#cb56-718" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-719"><a href="#cb56-719" aria-hidden="true" tabindex="-1"></a>We can transform a <span class="in">`glmmTMB`</span> model output into a <span class="in">`metafor`</span> object to be able to use the visualisation tools available in <span class="in">`metafor`</span> and <span class="in">`orchard`</span> for example.</span>
-<span id="cb56-720"><a href="#cb56-720" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-721"><a href="#cb56-721" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">TO BE DONE</span><span class="co">]</span></span>
-<span id="cb56-722"><a href="#cb56-722" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-723"><a href="#cb56-723" aria-hidden="true" tabindex="-1"></a><span class="fu"># Simulation study</span></span>
+<span id="cb56-717"><a href="#cb56-717" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-718"><a href="#cb56-718" aria-hidden="true" tabindex="-1"></a><span class="fu">## Visualisation and plotting</span></span>
+<span id="cb56-719"><a href="#cb56-719" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-720"><a href="#cb56-720" aria-hidden="true" tabindex="-1"></a>We can transform a <span class="in">`glmmTMB`</span> model output into a <span class="in">`metafor`</span> object to be able to use the visualisation tools available in <span class="in">`metafor`</span> and <span class="in">`orchard`</span> for example.</span>
+<span id="cb56-721"><a href="#cb56-721" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-722"><a href="#cb56-722" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">IN PROGRESS</span><span class="co">]</span></span>
+<span id="cb56-723"><a href="#cb56-723" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb56-724"><a href="#cb56-724" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-725"><a href="#cb56-725" aria-hidden="true" tabindex="-1"></a>To assess <span class="in">`glmmTMB`</span> we conducted a simulation study. </span>
+<span id="cb56-725"><a href="#cb56-725" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span>
 <span id="cb56-726"><a href="#cb56-726" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-727"><a href="#cb56-727" aria-hidden="true" tabindex="-1"></a>We generated data given four effect size measures:</span>
+<span id="cb56-727"><a href="#cb56-727" aria-hidden="true" tabindex="-1"></a>Bangert-Drowns, R. L., Hurley, M. M., &amp; Wilkinson, B. (2004). _The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis_. Review of Educational Research, 74, 29-58.</span>
 <span id="cb56-728"><a href="#cb56-728" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-729"><a href="#cb56-729" aria-hidden="true" tabindex="-1"></a><span class="ss">*   </span>Standardised Mean Difference (SMD)</span>
+<span id="cb56-729"><a href="#cb56-729" aria-hidden="true" tabindex="-1"></a>Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). _Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature_. Journal of the American Medical Association, 271(9), 698–702. <span class="ot">&lt;https://doi.org/10.1001/jama.1994.03510330076038&gt;</span></span>
 <span id="cb56-730"><a href="#cb56-730" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-731"><a href="#cb56-731" aria-hidden="true" tabindex="-1"></a><span class="ss">*   </span>Log Response Ratio (lnRR) </span>
+<span id="cb56-731"><a href="#cb56-731" aria-hidden="true" tabindex="-1"></a>Felix, J. A., Stevenson, P. C., &amp; Koricheva, J. (2023). _Plant neighbourhood diversity effects on leaf traits: A meta-analysis_. Functional Ecology, 37(12), 3150–3163. <span class="ot">&lt;https://doi.org/10.1111/1365-2435.14441&gt;</span></span>
 <span id="cb56-732"><a href="#cb56-732" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-733"><a href="#cb56-733" aria-hidden="true" tabindex="-1"></a><span class="ss">*   </span>Odd ratio effect sizes (OR)</span>
+<span id="cb56-733"><a href="#cb56-733" aria-hidden="true" tabindex="-1"></a>Viechtbauer, W. (2010). _Conducting meta-analyses in R with the metafor package_. Journal of Statistical Software, 36(3), 1–48. <span class="ot">&lt;https://doi.org/10.18637/jss.v036.i03&gt;</span></span>
 <span id="cb56-734"><a href="#cb56-734" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-735"><a href="#cb56-735" aria-hidden="true" tabindex="-1"></a><span class="ss">*   </span>Poisson meta-analysis to model incidence rate ratios (IRR)</span>
+<span id="cb56-735"><a href="#cb56-735" aria-hidden="true" tabindex="-1"></a>Viechtbauer,W.,&amp;López-López, J.A. (2022). _Location-scale models for meta-analysis_. Research Synthesis Methods, 13(6), 697–715. <span class="ot">&lt;https://doi.org/10.1002/jrsm.1562&gt;</span></span>
 <span id="cb56-736"><a href="#cb56-736" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-737"><a href="#cb56-737" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-738"><a href="#cb56-738" aria-hidden="true" tabindex="-1"></a><span class="fu">## Simulation parameters</span></span>
-<span id="cb56-739"><a href="#cb56-739" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-740"><a href="#cb56-740" aria-hidden="true" tabindex="-1"></a>| Measure | $\mu$         | $\tau^2$ | $\sigma_T$ | $\sigma_C$ | $\mu_C$ | $n_T$ | $n_C$ | $t_T$ | $t_C$ |</span>
-<span id="cb56-741"><a href="#cb56-741" aria-hidden="true" tabindex="-1"></a>|:--------|:--------------|:--------:|:----------:|:----------:|:-------:|:-----:|:-----:|:-----:|:-----:|</span>
-<span id="cb56-742"><a href="#cb56-742" aria-hidden="true" tabindex="-1"></a>| SMD     | $0.3$         | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |</span>
-<span id="cb56-743"><a href="#cb56-743" aria-hidden="true" tabindex="-1"></a>| lnRR    | $\log(1.3)$   | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |</span>
-<span id="cb56-744"><a href="#cb56-744" aria-hidden="true" tabindex="-1"></a>| OR      | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     | $50$  | $50$  |  -    |  -    |</span>
-<span id="cb56-745"><a href="#cb56-745" aria-hidden="true" tabindex="-1"></a>| IRR     | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     |  -    |  -    | $50$  | $50$  |</span>
-<span id="cb56-746"><a href="#cb56-746" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-747"><a href="#cb56-747" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-748"><a href="#cb56-748" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-749"><a href="#cb56-749" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-750"><a href="#cb56-750" aria-hidden="true" tabindex="-1"></a><span class="fu">## Results</span></span>
-<span id="cb56-751"><a href="#cb56-751" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-752"><a href="#cb56-752" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-737"><a href="#cb56-737" aria-hidden="true" tabindex="-1"></a>White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <span class="ot">&lt;https://CRAN.R-project.org/package=metadat&gt;</span>.</span>
+<span id="cb56-738"><a href="#cb56-738" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-739"><a href="#cb56-739" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session info</span></span>
+<span id="cb56-740"><a href="#cb56-740" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-743"><a href="#cb56-743" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb56-744"><a href="#cb56-744" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: Reproducibility-SessionInfo-R-environment</span></span>
+<span id="cb56-745"><a href="#cb56-745" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-align: &quot;center&quot;</span></span>
+<span id="cb56-746"><a href="#cb56-746" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: &#39;100%&#39;</span></span>
+<span id="cb56-747"><a href="#cb56-747" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: asis</span></span>
+<span id="cb56-748"><a href="#cb56-748" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb56-749"><a href="#cb56-749" aria-hidden="true" tabindex="-1"></a><span class="co">#| warnings: false</span></span>
+<span id="cb56-750"><a href="#cb56-750" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-751"><a href="#cb56-751" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sessioninfo)</span>
+<span id="cb56-752"><a href="#cb56-752" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(details)</span>
 <span id="cb56-753"><a href="#cb56-753" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-754"><a href="#cb56-754" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span>
-<span id="cb56-755"><a href="#cb56-755" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-756"><a href="#cb56-756" aria-hidden="true" tabindex="-1"></a>Bangert-Drowns, R. L., Hurley, M. M., &amp; Wilkinson, B. (2004). _The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis_. Review of Educational Research, 74, 29-58.</span>
-<span id="cb56-757"><a href="#cb56-757" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-758"><a href="#cb56-758" aria-hidden="true" tabindex="-1"></a>Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). _Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature_. Journal of the American Medical Association, 271(9), 698–702. <span class="ot">&lt;https://doi.org/10.1001/jama.1994.03510330076038&gt;</span></span>
-<span id="cb56-759"><a href="#cb56-759" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-760"><a href="#cb56-760" aria-hidden="true" tabindex="-1"></a>Felix, J. A., Stevenson, P. C., &amp; Koricheva, J. (2023). _Plant neighbourhood diversity effects on leaf traits: A meta-analysis_. Functional Ecology, 37(12), 3150–3163. <span class="ot">&lt;https://doi.org/10.1111/1365-2435.14441&gt;</span></span>
-<span id="cb56-761"><a href="#cb56-761" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-762"><a href="#cb56-762" aria-hidden="true" tabindex="-1"></a>Viechtbauer, W. (2010). _Conducting meta-analyses in R with the metafor package_. Journal of Statistical Software, 36(3), 1–48. <span class="ot">&lt;https://doi.org/10.18637/jss.v036.i03&gt;</span></span>
-<span id="cb56-763"><a href="#cb56-763" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-764"><a href="#cb56-764" aria-hidden="true" tabindex="-1"></a>Viechtbauer,W.,&amp;López-López, J.A. (2022). _Location-scale models for meta-analysis_. Research Synthesis Methods, 13(6), 697–715. <span class="ot">&lt;https://doi.org/10.1002/jrsm.1562&gt;</span></span>
-<span id="cb56-765"><a href="#cb56-765" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-766"><a href="#cb56-766" aria-hidden="true" tabindex="-1"></a>White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <span class="ot">&lt;https://CRAN.R-project.org/package=metadat&gt;</span>.</span>
-<span id="cb56-767"><a href="#cb56-767" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-768"><a href="#cb56-768" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session info</span></span>
-<span id="cb56-769"><a href="#cb56-769" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-772"><a href="#cb56-772" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb56-773"><a href="#cb56-773" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: Reproducibility-SessionInfo-R-environment</span></span>
-<span id="cb56-774"><a href="#cb56-774" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-align: &quot;center&quot;</span></span>
-<span id="cb56-775"><a href="#cb56-775" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: &#39;100%&#39;</span></span>
-<span id="cb56-776"><a href="#cb56-776" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: asis</span></span>
-<span id="cb56-777"><a href="#cb56-777" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb56-778"><a href="#cb56-778" aria-hidden="true" tabindex="-1"></a><span class="co">#| warnings: false</span></span>
-<span id="cb56-779"><a href="#cb56-779" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-780"><a href="#cb56-780" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sessioninfo)</span>
-<span id="cb56-781"><a href="#cb56-781" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(details)</span>
-<span id="cb56-782"><a href="#cb56-782" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-783"><a href="#cb56-783" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> <span class="fu">session_info</span>()</span>
-<span id="cb56-784"><a href="#cb56-784" aria-hidden="true" tabindex="-1"></a><span class="fu">details</span>(si, <span class="at">summary =</span> <span class="st">&#39;Current session info&#39;</span>, <span class="at">open =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb56-785"><a href="#cb56-785" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-786"><a href="#cb56-786" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb56-754"><a href="#cb56-754" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> <span class="fu">session_info</span>()</span>
+<span id="cb56-755"><a href="#cb56-755" aria-hidden="true" tabindex="-1"></a><span class="fu">details</span>(si, <span class="at">summary =</span> <span class="st">&#39;Current session info&#39;</span>, <span class="at">open =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb56-756"><a href="#cb56-756" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-757"><a href="#cb56-757" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

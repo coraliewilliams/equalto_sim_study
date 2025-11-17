@@ -502,7 +502,6 @@ fit_phylo_rma <- rma.mv(yi, vi,
                                        ~1 | id), 
                         R = list(phylo = phylo.cor),
                         data = ef,
-                        sparse = TRUE,
                         method="REML") #default is REML
 
 summary(fit_phylo_rma)
@@ -572,6 +571,8 @@ runtime_df
 ```
 
 
+
+[https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting](https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting)
 
 
 ## Location-scale meta-analysis
@@ -653,37 +654,7 @@ We can change the optimization method using by modifying the `control = glmmTMBC
 
 We can transform a `glmmTMB` model output into a `metafor` object to be able to use the visualisation tools available in `metafor` and `orchard` for example.
 
-[TO BE DONE]
-
-# Simulation study
-
-To assess `glmmTMB` we conducted a simulation study. 
-
-We generated data given four effect size measures:
-
-*   Standardised Mean Difference (SMD)
-
-*   Log Response Ratio (lnRR) 
-
-*   Odd ratio effect sizes (OR)
-
-*   Poisson meta-analysis to model incidence rate ratios (IRR)
-
-
-## Simulation parameters
-
-| Measure | $\mu$         | $\tau^2$ | $\sigma_T$ | $\sigma_C$ | $\mu_C$ | $n_T$ | $n_C$ | $t_T$ | $t_C$ |
-|:--------|:--------------|:--------:|:----------:|:----------:|:-------:|:-----:|:-----:|:-----:|:-----:|
-| SMD     | $0.3$         | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |
-| lnRR    | $\log(1.3)$   | $0.16$     | $10$       | $10$       | $100$   | $50$  | $50$  |  -    |  -    |
-| OR      | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     | $50$  | $50$  |  -    |  -    |
-| IRR     | $\log(1.5)$   | $0.16$     |  -         |  -         |   -     |  -    |  -    | $50$  | $50$  |
-
-
-
-
-## Results
-
+[IN PROGRESS]
 
 
 # References
