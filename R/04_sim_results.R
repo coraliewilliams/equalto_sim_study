@@ -2,6 +2,17 @@ library(ggplot2);library(devtools);library(cowplot);library(ggdark);theme_set(da
 library(ggdist);library(tidyverse);library(dplyr);library(patchwork); library(scales);
 library(latex2exp); library(xtable); library(grid);library(readr); library(data.table)
 
+#### For plots
+theme_update(plot.title = element_text(colour = "black"))
+
+# color-blind friendly palette (Okabe–Ito), in hex
+col.m <- c(
+  SMD  = "#0072B2",  # blue
+  lnRR = "#009E73",  # green
+  OR   = "#D55E00",  # vermilion
+  IRR  = "#CC79A7"   # purple
+)
+col.m.pastel <- alpha(col.m, 0.4)
 
 # load result files
 res_smd <- read_csv("results/res_smd.csv")
@@ -54,12 +65,12 @@ res_OR$true_tau2 <- ifelse(m > 0, as.numeric(sub("tau2=([^ ]+).*", "\\1", regmat
 m <- regexpr("tau2=([0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?\\d+)?)", res_IRR$scenario, perl = TRUE)
 res_IRR$true_tau2 <- ifelse(m > 0, as.numeric(sub("tau2=([^ ]+).*", "\\1", regmatches(res_IRR$scenario, m))), NA_real_)
 
-# remove one sim repetition where rma.glmm didn't converge (no result) for proper comparison
+# remove all sim repetitions where rma.glmm didn't converge (no result) for proper comparison
+# this is for the plot of agreement Poisson-Normal
 res_IRR2 <- res_IRR |>
   group_by(param_id) |>
   filter(n() >= 4) |>
   ungroup()
-
 
 # remove sim repetitions where rma.uni didn't converge (no result) for proper comparison
 res_OR2 <- res_OR |> 
@@ -74,23 +85,25 @@ res <- bind_rows(
   .id = "source"   # optional: labels row origins as "1","2","3","4"
 )
 
-# derive Wald z-test CI - forgot to store CI
+# derive Wald z-test CI - forgot to store CI - and save pvalue for plots
 zcrit  <- qnorm(1 - 0.05/2)
+res$z <- res$est / res$se 
+res$p_wald <- 2 * pnorm(-abs(res$z))
 res$mu_ci_lb <- res$est - zcrit * res$se #ci lower bound
 res$mu_ci_ub <- res$est + zcrit * res$se #ci upper bound
 res$mu_ci_width <- res$mu_ci_ub - res$mu_ci_lb #ci width
 
-# derive t-test p-value and CI
+# derive t-test p-value and CI ---> not used but in case I get a question about it
 df <- 20 - 1 #all sim datasets were nrow=nstudy=20
 t_stat <- (res$est - res$mu) / res$se
 res$p_t <- 2 * pt(-abs(t_stat), df = df)
 res$mu_ci_lb_t <- res$est - qt(1 - 0.05/2, df = df) * res$se
 res$mu_ci_ub_t <- res$est + qt(1 - 0.05/2, df = df) * res$se
-res$mu_ci_width_t <- res$mu_ci_ub - res$mu_ci_lb
+res$mu_ci_width_t <- res$mu_ci_ub_t - res$mu_ci_lb_t
 
 # coverage mu estimate
-res$cov_mu <- res$mu > res$mu_ci_lb & res$mu < res$mu_ci_ub
-res$cov_mu_t <- res$mu > res$mu_ci_lb_t & res$mu < res$mu_ci_ub_t
+res$cov_mu <- res$mu >= res$mu_ci_lb & res$mu <= res$mu_ci_ub
+res$cov_mu_t <- res$mu >= res$mu_ci_lb_t & res$mu <= res$mu_ci_ub_t
 
 
 # sampling variance
@@ -101,10 +114,6 @@ res_sample_var <- res |>
   ungroup()
 
 
-### need to back transform lnRR estimates and IRR and OR???
-
-
-
 ################# 3. Derive sim results ####################
 
 # RMSE dataset for overall mean mu 
@@ -113,39 +122,42 @@ rmse.dat.mu <- res |>
   summarise(rmse = sqrt(mean((mu - est)^2))) |> 
   ungroup()
 
+# RMSE dataset for overall mean mu 
+rmse.dat.tau2 <- res |> 
+  group_by(measure, model, scenario) |> 
+  summarise(rmse = sqrt(mean((true_tau2 - tau2)^2))) |> 
+  ungroup()
 
 # coverage
 cov.dat <- res |> 
   group_by(measure, model, scenario) |> 
-  summarise(cov_prop = mean(cov_mu, na.rm = TRUE)) |> 
+  summarise(cov_prop = mean(cov_mu, na.rm = TRUE),
+            n = n()) |> 
   ungroup()
 
 
 # CI width dataset for overall mean mu 
 ci.dat <- res |> 
   group_by(measure, model, scenario) |> 
-  summarise(ci_width = mean(mu_ci_width)) |> 
-  ungroup()
-
-
-# Type I error
-typeI.dat <- res |>
-  filter(mu == 0) |> 
-  group_by(measure, model, scenario) |> 
-  summarise(typeI = mean(pvalue<0.05),
+  summarise(ci_width = mean(mu_ci_width, na.rm = TRUE),
             n = n()) |> 
   ungroup()
 
+# Type I error
+typeI.dat <- res |>
+  filter(mu == 0) |>
+  group_by(measure, model, scenario) |>
+  summarise(typeI = mean(p_wald < 0.05, na.rm = TRUE),
+            n = sum(!is.na(p_wald))) |>
+  ungroup()
 
 # Power 
 power.dat <- res |>
   filter(mu != 0) |> 
   group_by(measure, model, scenario) |> 
-  summarise(power = 1 - mean(pvalue>0.05, na.rm = TRUE),
+  summarise(power = 1 - mean(p_wald > 0.05, na.rm = TRUE),
             n = n()) |> 
   ungroup()
-
-
 
 # get latex tables of convergence summaries
 tab.conv <- as.data.frame(table(res$conv, res$model, res$measure))
@@ -174,19 +186,6 @@ res_conv_summary <- tab.conv |>
 # \end{tabular}
 # \end{table}
 
-
-
-
-#### For plots
-
-# color-blind friendly palette (Okabe–Ito), in hex
-col.m <- c(
-  SMD  = "#0072B2",  # blue
-  lnRR = "#009E73",  # green
-  OR   = "#D55E00",  # vermilion
-  IRR  = "#CC79A7"   # purple
-)
-col.m.pastel <- alpha(col.m, 0.4)
 
 
 
@@ -254,10 +253,9 @@ ggsave(filename = "results/figures/Figure_runtime.pdf", width = 5, height = 12)
 
 
 
+################ 4. Plots/tables - RMSE mu and tau2 ###############
 
-################ 4. Plots/tables - overall mean estimate ###############
-
-######### RMSE ---
+######### mu RMSE ---
 # plot for SMD and lnRR
 p_rmsea <- rmse.dat.mu |>
   filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
@@ -307,10 +305,58 @@ plot_rmse <- p_rmsea + p_rmseb + p_rmsec +
 ggsave(filename = "results/figures/Figure_RMSE_mu.pdf", width = 5, height = 11)
 
 
+######### tau2 RMSE ---
+# plot for SMD and lnRR
+p_rmsea <- rmse.dat.tau2 |>
+  filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  geom_boxplot() +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 2) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="lnRR and SMD") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# plot for OR
+p_rmseb <- rmse.dat.tau2 |>
+  filter(measure %in% c("OR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  geom_boxplot() +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="OR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# plot for IRR
+p_rmsec <- rmse.dat.tau2 |>
+  filter(measure %in% c("IRR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  geom_boxplot() +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="IRR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+### pathwork for runtime figure
+plot_rmse <- p_rmsea + p_rmseb + p_rmsec +
+  plot_layout(ncol=1, guides = "collect") +
+  plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+
+ggsave(filename = "results/figures/Figure_RMSE_tau2.pdf", width = 5, height = 11)
 
 
 
-################ 5. Plots/tables - mu & tau2 estimate aggreements ###############
+################ 5. Plots/tables - estimate agreements mu and tau2 ###############
 
 #### NORMAL-NORMAL
 # mu estimate dataset - package aggreement
@@ -433,7 +479,7 @@ plot_est_binom <- mu_hat_binom_plot + tau2_hat_binom_plot +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 
-ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 9, height = 11)
+ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 8, height = 10)
 
 
 
@@ -547,7 +593,56 @@ plot_cov <- p_cova + p_covb + p_covc +
 
 ggsave(filename = "results/figures/Figure_coverage_mu.pdf", width = 5, height = 11)
 
-theme_update(plot.title = element_text(colour = "black"))
+
+#### 95% CI widths --------
+# plot for SMD and lnRR
+p_cia <- ci.dat |>
+  filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
+  ggplot(aes(x = model, y = ci_width, colour = measure, fill = measure)) +
+  geom_boxplot() +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 2) +
+  theme_bw() +
+  labs(y = "CI width (95%)", title="lnRR and SMD") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# plot for OR
+p_cib <- ci.dat |>
+  filter(measure %in% c("OR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
+  ggplot(aes(x = model, y = ci_width, colour = measure, fill = measure)) +
+  geom_boxplot() +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = "CI width (95%)", title="OR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# plot for IRR
+p_cic <- ci.dat |>
+  filter(measure %in% c("IRR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
+  ggplot(aes(x = model, y = ci_width, colour = measure, fill = measure)) +
+  geom_boxplot() +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = "CI width (95%)", title="IRR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+### pathwork for runtime figure
+plot_ci <- p_cia + p_cib + p_cic +
+  plot_layout(ncol=1, guides = "collect") +
+  plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+
+ggsave(filename = "results/figures/Figure_ci_width_mu.pdf", width = 5, height = 11)
+
 
 
 

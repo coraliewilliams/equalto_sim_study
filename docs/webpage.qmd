@@ -435,7 +435,7 @@ ef$id <- as.factor(1:nrow(ef))
 
 # set up sampling errors variance-covariance matrix 
 # assuming within-study a constant correlation of 0.5
-V <- metafor::vcalc(vi, cluster=ACC, obs=id, data=dat, rho=0.5)
+V <- metafor::vcalc(vi, cluster=ACC, obs=id, data=ef, rho=0.5)
 
 # make sure row matrix and id levels match
 rownames(V) <- colnames(V) <- levels(ef$id)
@@ -461,7 +461,7 @@ This multilevel phylogenetic meta-analysis has two covariance structures in `glm
 #| cache: true
 fit_phylo <- glmmTMB(yi ~ Nfixing-1 + 
                        (1 | experiment) + (1 | ACC) +
-                       (1 | species) + propto(0 + species|g, phylo.cor) + 
+                       (1 | species) + propto(0 + phylo|g, phylo.cor) + 
                        equalto(0 + id|g, V), 
                      data = ef, 
                      REML=TRUE)
@@ -508,18 +508,70 @@ fit_phylo_rma <- rma.mv(yi, vi,
 summary(fit_phylo_rma)
 ```
 
-
+We can store time and compare with `metafor` with and without using the argument `sparse=TRUE` which helps speed up computational speed:
 
 ```{r}
 #| cache: true
-fit_phylo <- glmmTMB(yi ~ Nfixing-1 + 
-                       (1 | experiment) + (1 | ACC) +
-                       (1 | species) + propto(0 + phylo|g, phylo.cor) + 
-                       equalto(0 + id|g, V), 
-                     data = ef, 
-                     REML=TRUE)
+## Fit glmmTMB model and store runtime
+time_glmmTMB <- system.time(
+  fit_phylo <- glmmTMB(
+    yi ~ Nfixing - 1 +
+      (1 | experiment) + (1 | ACC) +
+      (1 | species) +
+      propto(0 + phylo | g, phylo.cor) +
+      equalto(0 + id | g, V),
+    data = ef,
+    REML = TRUE
+  )
+)[["elapsed"]]
 
+## Fit rma.mv model and store runtime
+time_rma <- system.time(
+  fit_phylo_rma <- rma.mv(
+    yi, vi,
+    mods   = ~ Nfixing - 1,
+    random = list(
+      ~ 1 | experiment,
+      ~ 1 | ACC,
+      ~ 1 | species,
+      ~ 1 | phylo,
+      ~ 1 | id
+    ),
+    R      = list(phylo = phylo.cor),
+    data   = ef,
+    method = "REML"
+  )
+)[["elapsed"]]
+
+## Fit rma.mv model and store runtime
+time_rma_sparse <- system.time(
+  fit_phylo_rma <- rma.mv(
+    yi, vi,
+    mods   = ~ Nfixing - 1,
+    random = list(
+      ~ 1 | experiment,
+      ~ 1 | ACC,
+      ~ 1 | species,
+      ~ 1 | phylo,
+      ~ 1 | id
+    ),
+    R      = list(phylo = phylo.cor),
+    data   = ef,
+    sparse = TRUE,
+    method = "REML"
+  )
+)[["elapsed"]]
+
+## Put runtimes into a tidy object
+runtime_df <- data.frame(
+  model       = c("glmmTMB_phylo", "rma.mv_phylo", "rma.mv_phylo_sparse"),
+  runtime_sec = c(time_glmmTMB, time_rma, time_rma_sparse)
+)
+
+runtime_df
 ```
+
+
 
 
 ## Location-scale meta-analysis
