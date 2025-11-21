@@ -81,28 +81,28 @@ res <- bind_rows(
   res_smd,
   res_lnrr,
   res_OR2,
-  res_IRR,
+  res_IRR2,
   .id = "source"   # optional: labels row origins as "1","2","3","4"
 )
 
 # derive Wald z-test CI - forgot to store CI - and save pvalue for plots
 zcrit  <- qnorm(1 - 0.05/2)
-res$z <- res$est / res$se 
+res$z <- res$est / res$se #H0 assumes true mean is zero
 res$p_wald <- 2 * pnorm(-abs(res$z))
-res$mu_ci_lb <- res$est - zcrit * res$se #ci lower bound
-res$mu_ci_ub <- res$est + zcrit * res$se #ci upper bound
+res$mu_ci_lb <- res$est - zcrit*res$se #ci lower bound
+res$mu_ci_ub <- res$est + zcrit*res$se #ci upper bound
 res$mu_ci_width <- res$mu_ci_ub - res$mu_ci_lb #ci width
+# coverage mu estimate for Wald test
+res$cov_mu <- res$mu_ci_lb <= res$mu & res$mu <= res$mu_ci_ub
 
 # derive t-test p-value and CI ---> not used but in case I get a question about it
-df <- 20 - 1 #all sim datasets were nrow=nstudy=20
-t_stat <- (res$est - res$mu) / res$se
+df <- 19 - 1 #all sim datasets were nrow=nstudy=20
+t_stat <- (res$est-0) / res$se
 res$p_t <- 2 * pt(-abs(t_stat), df = df)
 res$mu_ci_lb_t <- res$est - qt(1 - 0.05/2, df = df) * res$se
 res$mu_ci_ub_t <- res$est + qt(1 - 0.05/2, df = df) * res$se
 res$mu_ci_width_t <- res$mu_ci_ub_t - res$mu_ci_lb_t
-
-# coverage mu estimate
-res$cov_mu <- res$mu >= res$mu_ci_lb & res$mu <= res$mu_ci_ub
+# coverage mu estimate for t-test
 res$cov_mu_t <- res$mu >= res$mu_ci_lb_t & res$mu <= res$mu_ci_ub_t
 
 
@@ -478,7 +478,6 @@ plot_est_binom <- mu_hat_binom_plot + tau2_hat_binom_plot +
   plot_layout(ncol=1, guides = "collect") +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
-
 ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 8, height = 10)
 
 
@@ -501,6 +500,27 @@ mu_hat_pois_plot <- res_IRR2 |> ##use filtered IRR
   labs(
     x = TeX("$\\hat{\\mu}$ rma.glmm[IRR]"),
     y = TeX("$\\hat{\\mu}$ glmmTMB"),
+    title = "Poisson–Normal models agreement"
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+# mu SE plot - package agreement
+mu_se_pois_plot <- res_IRR2 |> ##use filtered IRR
+  filter(model %in% c("glmmTMB.poisson", "rma.glmm_IRR")) |>
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("IRR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, se) |>
+  pivot_wider(names_from = model, values_from = se) |>
+  drop_na(`rma.glmm_IRR`, `glmmTMB.poisson`) |>
+  ggplot(aes(x = `rma.glmm_IRR`, y = glmmTMB.poisson, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  labs(
+    x = TeX("$\\hat{\\mu}$ standard error rma.glmm[IRR]"),
+    y = TeX("$\\hat{\\mu}$ standard error glmmTMB"),
     title = "Poisson–Normal models agreement"
   ) +
   theme_bw() +

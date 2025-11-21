@@ -326,6 +326,20 @@ bv_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
                        data=dat_long)
 ```
 
+
+```{r}
+#| output: false
+#| warnings: false
+#| eval: false
+# bivariate multilevel => compare with brms
+bv_ml_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
+                       dispformula = ~ (0 + group|study),
+                       REML = TRUE,
+                       data=dat_long)
+```
+
+
+
 To obtain the variance component estimates and corresponding correlation $\rho$ (i.e. `rho`) for each group we use the `VarCorr` function:
 
 ```{r}
@@ -631,6 +645,8 @@ fit_ls_rma <- rma(yi, vi,
 
 
 By default `metafor` uses the variance for the scale, whereas `glmmTMB` uses the standard deviation. Hence, to compare both outputs we need to times by x2 the estimates from the `glmmTMB` model (given the scale model uses a log link).
+
+
 
 
 # Useful notes and links
