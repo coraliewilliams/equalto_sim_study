@@ -20,7 +20,7 @@ format:
 
 This webpage is supporting material to the paper "*Meta-analysis with `glmmTMB` R package*".
 
-We provide show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which allows to specify the sampling error variance-covariance (VCV) matrix.
+Below, we show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which allows to specify the sampling error variance-covariance (VCV) matrix.
 
 ### Contact {#contact}
 
