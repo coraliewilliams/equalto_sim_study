@@ -1,5 +1,5 @@
 ---
-title: "Fitting meta-analysis with `glmmTMB`"
+title: "Fitting meta-analysis with the `glmmTMB` R package"
 author: "Coralie Williams"
 format:
   html:
@@ -18,13 +18,15 @@ format:
     footnote-location: margin
 ---
 
-This webpage is supporting material to the paper "*Meta-analysis with `glmmTMB` R package*".
+This webpage is supporting material to the paper "*Meta-analysis with the `glmmTMB` R package*" (DOI: XXX).
 
-Below, we show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which allows to specify the sampling error variance-covariance (VCV) matrix.
+Below, we show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which enables  to specify the sampling error variance-covariance (VCV) matrix.
 
 ### Contact {#contact}
 
-For questions or comments, contact Coralie Williams: [coraliewilliams\@outlook.com](mailto:coraliewilliams@outlook.com)
+For any questions or to raise an error, please contact Coralie Williams: [coralie.williams\@unsw.edu.au](mailto:coralie.williams@unsw.edu.au)
+
+Last updated: `r format(Sys.Date(), "%d %B %Y")`
 
 
 # Introduction 
@@ -41,34 +43,25 @@ where $b_0$ is the overall mean effect, $u_i \sim N(0, \sigma^2_{u}I)$ represent
 
 $\text{VCV}$ represents a block-diagonal variance-covariance matrix including known (or calculated) sampling variances $\sigma^2_{e}=v_i$ on the diagonal and accounts for correlations among sampling errors from the same study.
 
-### Load `glmmTMB` package
-
-Currently, `equalto` is not on CRAN (yet!), so you need to install `glmmTMB` from the [following branch](https://github.com/coraliewilliams/glmmTMB/tree/equalto_covstruc):
-
-::: callout-note
-**Important note:** If you have `glmmTMB` already installed, you will need to uninstall it first.
-:::
+### Load librairies
 
 ```{r}
-#| eval: false
 #| output: false
 #| warnings: false
 
-# build package from branch: 
-remotes::install_github("coraliewilliams/glmmTMB", ref="equalto_covstruc", subdir="glmmTMB")
+# load libraries
+  library(MASS)
+  library(kableExtra)
+  library(metafor)
+  library(glmmTMB)
 ```
 
-Load `glmmTMB` package:
-
-```{r}
-library(glmmTMB)
-```
-
-Check if the `equalto` covariance structure is available (it should be in position 13 of this output) :
+Check if the `equalto` covariance structure is available (it should be in position 15 of this output) :
 
 ```{r}
 glmmTMB:::.valid_covstruct
 ```
+
 
 ### Simulate some data
 
@@ -77,13 +70,6 @@ Now, let's simulate some data following the structure of the above multilevel me
 ```{r}
 #| output: false
 #| warnings: false
-
-# load libraries
-suppressPackageStartupMessages({
-  library(MASS)
-  library(kableExtra)
-  library(metafor)
-})
 
 # set up indices
 k.studies <- 10 # number of studies
@@ -168,11 +154,43 @@ We specify:
 ```{r}
 
 # Fit glmmTMB model with equalto ----------------------------------
-fit.equalto <- glmmTMB(y ~ 1 + (1|study) + (1|study) + equalto(0 + obs|g,VCV),
+fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
                        data=dat,
                        REML=T)
 
-summary(fit.equalto)
+# > summary(fit.equalto)
+# 
+#  Family: gaussian  ( identity )
+# Formula:          y ~ 1 + (1 | study) + equalto(0 + obs | g, VCV)
+# Data: dat
+# 
+#       AIC       BIC    logLik -2*log(L)  df.resid 
+#      61.3      65.5     -27.6      55.3        27 
+# 
+# Random effects:
+# 
+# Conditional model:
+#  Groups   Name        Variance Std.Dev. Corr                                            
+#  study    (Intercept) 0.03440  0.1855                                                   
+#  g        obs1        0.05545  0.2355                                                   
+#           obs2        0.07455  0.2730   0.00                                            
+#           obs3        0.33583  0.5795   0.00 0.00                                       
+#           obs4        0.09652  0.3107   0.00 0.00 0.00                                  
+#           obs5        0.10144  0.3185   0.00 0.00 0.00 0.00                             
+#           obs6        0.13395  0.3660   0.00 0.00 0.00 0.00 0.00                        
+#           obs7        0.02728  0.1652   0.00 0.00 0.00 0.00 0.00 0.00                   
+#           obs8        0.04926  0.2220   0.00 0.00 0.00 0.00 0.00 0.00 0.00              
+#           obs9        0.06157  0.2481   0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00         
+#           obs10       0.12738  0.3569   0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00    
+#           ...         ...      ...      ...  ...  ...  ...  ...  ...  ...  ...  ...  ...
+#  Residual             0.25008  0.5001                                                   
+# Number of obs: 30, groups:  study, 10; g, 1
+# 
+# Dispersion estimate for gaussian family (sigma^2): 0.25 
+# 
+# Conditional model:
+#             Estimate Std. Error z value Pr(>|z|)
+# (Intercept) 0.005619   0.131220   0.043    0.966
 ```
 
 ### Fit `metafor` model
@@ -187,7 +205,29 @@ fit.metafor <- rma.mv(yi = y,
                       control=list(REMLf=FALSE), #set this to obtain the exact same likelihood as glmmTMB 
                       data = dat) #uses REML by default
 
-summary(fit.metafor)
+# > summary(fit.metafor)
+# 
+# Multivariate Meta-Analysis Model (k = 30; method: REML)
+# 
+#   logLik  Deviance       AIC       BIC      AICc   
+# -27.6455   55.2911   61.2911   65.3930   62.2511   
+# 
+# Variance Components:
+# 
+#             estim    sqrt  nlvls  fixed  factor 
+# sigma^2.1  0.0344  0.1855     10     no   study 
+# sigma^2.2  0.2501  0.5001     30     no      id 
+# 
+# Test for Heterogeneity:
+# Q(df = 29) = 207.0443, p-val < .0001
+# 
+# Model Results:
+# 
+# estimate      se    zval    pval    ci.lb   ci.ub    
+#   0.0056  0.1310  0.0429  0.9658  -0.2511  0.2624    
+# 
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 ```
 
 Then, we extract the model results for each model and compare outputs:
@@ -195,17 +235,17 @@ Then, we extract the model results for each model and compare outputs:
 ```{r}
 ### Compare output 
 equalto <- data.frame(model = "glmmTMB",
-                      est = summary(fit.equalto)$coefficients$cond[,"Estimate"],
-                      se = summary(fit.equalto)$coefficients$cond[,"Std. Error"],
-                      zval = summary(fit.equalto)$coefficients$cond[,"z value"],
-                      pval = summary(fit.equalto)$coefficients$cond[,"Pr(>|z|)"],
+                      est = coef(summary(fit.equalto))$cond[,"Estimate"],
+                      se = coef(summary(fit.equalto))$cond[,"Std. Error"],
+                      zval = coef(summary(fit.equalto))$cond[,"z value"],
+                      pval = coef(summary(fit.equalto))$cond[,"Pr(>|z|)"],
                       sigma.u = VarCorr(fit.equalto)$cond$study[,"(Intercept)"], ##among study variance estimate
                       sigma.m = sigma(fit.equalto)^2) ##within study variance estimate
 
 
 metafor <- data.frame(model = "metafor", 
-                      est = fit.metafor$b[[1]], 
-                      se = fit.metafor$se[[1]], 
+                      est = coef(fit.metafor)[1], 
+                      se = se(fit.metafor)[1], 
                       zval = fit.metafor$zval,
                       pval = fit.metafor$pval,
                       sigma.u = fit.metafor$sigma2[1], ## among study variance
@@ -324,7 +364,52 @@ bv_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
                        dispformula = ~ 0,
                        REML = TRUE,
                        data=dat_long)
+
+# > summary(bv_fit)
+#  Family: gaussian  ( identity )
+# Formula:          yi ~ group + (0 + group | study) + equalto(0 + obs | g, VCV)
+# Dispersion:          ~0
+# Data: dat_long
+# 
+#       AIC       BIC    logLik -2*log(L)  df.resid 
+#      78.1      84.4     -34.1      68.1        21 
+# 
+# Random effects:
+# 
+# Conditional model:
+#  Groups Name   Variance Std.Dev. Corr                                            
+#  study  groupc 2.617300 1.61781                                                  
+#         groupv 1.548603 1.24443  0.95                                            
+#  g      obs1   0.258403 0.50833                                                  
+#         obs2   0.098722 0.31420  0.00                                            
+#         obs3   0.170000 0.41231  0.00 0.00                                       
+#         obs4   0.038132 0.19528  0.00 0.00 0.00                                  
+#         obs5   0.337719 0.58114  0.00 0.00 0.00 0.00                             
+#         obs6   0.095694 0.30934  0.00 0.00 0.00 0.00 0.00                        
+#         obs7   0.016203 0.12729  0.00 0.00 0.00 0.00 0.00 0.00                   
+#         obs8   0.004112 0.06412  0.00 0.00 0.00 0.00 0.00 0.00 0.00              
+#         obs9   0.030502 0.17465  0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00         
+#         obs10  0.021450 0.14646  0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00    
+#         ...    ...      ...      ...  ...  ...  ...  ...  ...  ...  ...  ...  ...
+# Number of obs: 26, groups:  study, 13; g, 1
+# 
+# Conditional model:
+#             Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)  -4.0960     0.4530  -9.042  < 2e-16 ***
+# groupv       -0.7414     0.1892  -3.918 8.94e-05 ***
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# 
+# 
+emmeans::emmeans(bv_fit, ~ group) |> 
+  summary(infer=TRUE, type="response")
 ```
+
+
+
+
+
 
 
 ```{r}
@@ -465,10 +550,10 @@ V[1:5,1:5]
 
 We fit a multilevel model using experimental site (\texttt{experiment}), study ID (\texttt{ACC}), individual effect ID (\texttt{id}) and plant species (\texttt{species}) were included as random factors to account for non-independence among effect sizes. 
 
-This multilevel phylogenetic meta-analysis has two covariance structures in `glmmTMB`:
+This multilevel phylogenetic meta-analysis uses two covariance structures in `glmmTMB`:
 
 -   `propto`: to model shared evolutionary history across species assuming a proportional phylogenetic correlation matrix
--   `equalto`: to incorporate sampling-errors variance-covariance 
+-   `equalto`: to incorporate known sampling-errors variance-covariance 
 
 
 ```{r}
@@ -479,6 +564,53 @@ fit_phylo <- glmmTMB(yi ~ Nfixing-1 +
                        equalto(0 + id|g, V), 
                      data = ef, 
                      REML=TRUE)
+
+# Family: gaussian  ( identity )
+# Formula:  yi ~ Nfixing - 1 + (1 | experiment) + (1 | ACC) + (1 | species) +
+#                propto(0 + phylo | g, phylo.cor) + equalto(0 + id | g, V)
+# Data: ef
+# 
+#       AIC       BIC    logLik -2*log(L)  df.resid 
+#    2856.4    2890.5   -1421.2    2842.4       948 
+# 
+# Random effects:
+# 
+# Conditional model:
+#  Groups     Name                          Variance  Std.Dev.  Corr                                            
+#  experiment (Intercept)                   2.044e-01 0.4521456                                                 
+#  ACC        (Intercept)                   6.535e-08 0.0002556                                                 
+#  species    (Intercept)                   1.063e-01 0.3260582                                                 
+#  g          phyloRhus chinensis           2.958e-01 0.5438523                                                 
+#             phyloAnacardium excelsum      2.958e-01 0.5438523 0.99                                            
+#             phyloChoerospondias axillaris 2.958e-01 0.5438523 0.98 0.98                                       
+#             phyloCedrela odorata          2.958e-01 0.5438523 0.96 0.96 0.96                                  
+#             phyloSwietenia macrophylla    2.958e-01 0.5438523 0.96 0.96 0.96 0.99                             
+#             phyloSapindus mukorossi       2.958e-01 0.5438523 0.89 0.89 0.89 0.89 0.89                        
+#             phyloKoelreuteria bipinnata   2.958e-01 0.5438523 0.89 0.89 0.89 0.89 0.89 0.99                   
+#             phyloAcer saccharum           2.958e-01 0.5438523 0.89 0.89 0.89 0.89 0.89 0.94 0.94              
+#             phyloAcer pseudoplatanus      2.958e-01 0.5438523 0.89 0.89 0.89 0.89 0.89 0.94 0.94 0.99         
+#             phyloAcer rubrum              2.958e-01 0.5438523 0.89 0.89 0.89 0.89 0.89 0.94 0.94 0.98 0.98    
+#             ...                           ...       ...       ...  ...  ...  ...  ...  ...  ...  ...  ...  ...
+#  g.1        id1                           1.363e-01 0.3692337                                                 
+#             id2                           1.348e-01 0.3671031 0.50                                            
+#             id3                           1.371e-01 0.3703363 0.50 0.50                                       
+#             id4                           1.343e-01 0.3664739 0.50 0.50 0.50                                  
+#             id5                           1.385e-01 0.3721760 0.50 0.50 0.50 0.50                             
+#             id6                           1.526e-01 0.3905846 0.50 0.50 0.50 0.50 0.50                        
+#             id7                           5.509e-01 0.7422410 0.00 0.00 0.00 0.00 0.00 0.00                   
+#             id8                           9.201e-01 0.9591954 0.00 0.00 0.00 0.00 0.00 0.00 0.50              
+#             id9                           1.176e+00 1.0846430 0.00 0.00 0.00 0.00 0.00 0.00 0.50 0.50         
+#             id10                          1.908e+00 1.3812190 0.00 0.00 0.00 0.00 0.00 0.00 0.50 0.50 0.50    
+#             ...                           ...       ...       ...  ...  ...  ...  ...  ...  ...  ...  ...  ...
+#  Residual                                 4.256e-01 0.6523670                                                 
+# Number of obs: 955, groups:  experiment, 39; ACC, 39; species, 102; g, 1
+# 
+# Dispersion estimate for gaussian family (sigma^2): 0.426 
+# 
+# Conditional model:
+#                               Estimate Std. Error z value Pr(>|z|)
+# NfixingN-fixing neighbours     0.10552    0.32404   0.326    0.745
+# NfixingNo N-fixing neighbours  0.08583    0.31441   0.273    0.785
 
 ```
 
@@ -521,7 +653,7 @@ fit_phylo_rma <- rma.mv(yi, vi,
 summary(fit_phylo_rma)
 ```
 
-We can store time and compare with `metafor` with and without using the argument `sparse=TRUE` which helps speed up computational speed:
+We can store time and compare with the model fitted with `metafor`:
 
 ```{r}
 #| cache: true
@@ -556,37 +688,16 @@ time_rma <- system.time(
   )
 )[["elapsed"]]
 
-## Fit rma.mv model and store runtime
-time_rma_sparse <- system.time(
-  fit_phylo_rma <- rma.mv(
-    yi, vi,
-    mods   = ~ Nfixing - 1,
-    random = list(
-      ~ 1 | experiment,
-      ~ 1 | ACC,
-      ~ 1 | species,
-      ~ 1 | phylo,
-      ~ 1 | id
-    ),
-    R      = list(phylo = phylo.cor),
-    data   = ef,
-    sparse = TRUE,
-    method = "REML"
-  )
-)[["elapsed"]]
-
 ## Put runtimes into a tidy object
 runtime_df <- data.frame(
-  model       = c("glmmTMB_phylo", "rma.mv_phylo", "rma.mv_phylo_sparse"),
-  runtime_sec = c(time_glmmTMB, time_rma, time_rma_sparse)
+  model       = c("glmmTMB_phylo", "rma.mv_phylo"),
+  runtime_sec = c(time_glmmTMB, time_rma)
 )
 
 runtime_df
 ```
 
-
-
-[https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting](https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting)
+Some notes about speeding up model fitting with `metafor`: [https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting](https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting)
 
 
 ## Location-scale meta-analysis
@@ -618,6 +729,50 @@ fit_ls <- glmmTMB(yi ~ ni + equalto(0 + id|g, V),
                   dispformula = ~ ni,
                   data = dat,
                   REML = TRUE)
+
+# > summary(fit_ls)
+#  Family: gaussian  ( identity )
+# Formula:          yi ~ ni + equalto(0 + id | g, V)
+# Dispersion:          ~ni
+# Data: dat
+# 
+#       AIC       BIC    logLik -2*log(L)  df.resid 
+#      54.6      62.0     -23.3      46.6        44 
+# 
+# Random effects:
+# 
+# Conditional model:
+#  Groups   Name Variance Std.Dev. Corr                                            
+#  g        id1  0.070    0.26458                                                  
+#           id2  0.126    0.35496  0.00                                            
+#           id3  0.042    0.20494  0.00 0.00                                       
+#           id4  0.019    0.13784  0.00 0.00 0.00                                  
+#           id5  0.022    0.14832  0.00 0.00 0.00 0.00                             
+#           id6  0.009    0.09487  0.00 0.00 0.00 0.00 0.00                        
+#           id7  0.106    0.32558  0.00 0.00 0.00 0.00 0.00 0.00                   
+#           id8  0.007    0.08367  0.00 0.00 0.00 0.00 0.00 0.00 0.00              
+#           id9  0.040    0.20000  0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00         
+#           id10 0.052    0.22804  0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00    
+#           ...  ...      ...      ...  ...  ...  ...  ...  ...  ...  ...  ...  ...
+#  Residual         NA         NA                                                  
+# Number of obs: 48, groups:  g, 1
+# 
+# Conditional model:
+#               Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)  0.3016814  0.0667402   4.520 6.18e-06 ***
+# ni          -0.0005527  0.0001987  -2.781  0.00542 ** 
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Dispersion model:
+#              Estimate Std. Error z value Pr(>|z|)   
+# (Intercept) -0.960439   0.331888  -2.894  0.00381 **
+# ni          -0.004587   0.002540  -1.806  0.07095 . 
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# 
+# 
 ```
 
 View the estimates of the location-part of the model:
@@ -647,30 +802,21 @@ fit_ls_rma <- rma(yi, vi,
 By default `metafor` uses the variance for the scale, whereas `glmmTMB` uses the standard deviation. Hence, to compare both outputs we need to times by x2 the estimates from the `glmmTMB` model (given the scale model uses a log link).
 
 
-
-
 # Useful notes and links
 
-## Changing optimization method
+## Changing optimization method in `glmmTMB`
 
 We can change the optimization method using by modifying the `control = glmmTMBControl()` argument. By default, `glmmTMB` uses the `nlminb` non-linear optimizer for parameter estimation. 
 
-
-
--   [Troubleshooting with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
-
-`control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS"))`
-`control = list(REMLf=FALSE, optimizer = "BFGS"))`
-
 -   [Troubleshooting with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
 
 
+## Covariance structures in `glmmTMB`
 
-## Visualisation and plotting
+The `glmmTMB` package offers a variety of covariance structures that can be used to model different types of dependencies in the data. A list of available covariance structures and their applications can be found in the package documentation:
 
-We can transform a `glmmTMB` model output into a `metafor` object to be able to use the visualisation tools available in `metafor` and `orchard` for example.
+-   [Covariance structures with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/covstruct.html)
 
-[IN PROGRESS]
 
 
 # References
@@ -691,17 +837,18 @@ White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Ana
 
 ```{r}
 #| label: Reproducibility-SessionInfo-R-environment
-#| fig-align: "center"
-#| out-width: '100%'
-#| results: asis
-#| message: false
-#| warnings: false
+#| echo: false
 
-library(sessioninfo)
-library(details)
+pkgs <- loadedNamespaces()
 
-si <- session_info()
-details(si, summary = 'Current session info', open = FALSE)
+pkg_versions <- data.frame(
+  Package = pkgs,
+  Version = vapply(pkgs, function(x) as.character(utils::packageVersion(x)), character(1)),
+  row.names = NULL
+)
 
+pkg_versions <- pkg_versions[order(pkg_versions$Package), ]
+
+knitr::kable(pkg_versions, align = c("l", "l"))
 ```
 
