@@ -20,7 +20,7 @@ format:
 
 This webpage is supporting material to the paper "*Meta-analysis with the `glmmTMB` R package*" (DOI: XXX).
 
-Below, we show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package, which enables  to specify the sampling error variance-covariance (VCV) matrix.
+Below, we show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package (Brooks et al., 2017), which enables to specify the known sampling error variance-covariance (VCV) matrix.
 
 ### Contact {#contact}
 
@@ -31,7 +31,7 @@ Last updated: `r format(Sys.Date(), "%d %B %Y")`
 
 # Introduction 
 
-To demonstrate how to fit a meta-analysis using the `glmmTMB` R package, we will fit a multilevel meta-analytic model assuming multiple effect sizes per study. This model synthesises effect sizes across studies by accounting for variation at both the study and observation (effect size) levels, while also modelling correlated sampling errors within studies.
+To demonstrate how to fit a meta-analysis using the `glmmTMB` R package (Brooks et al., 2017), we will fit a multilevel meta-analytic model assuming multiple effect sizes per study. This model synthesises effect sizes across studies by accounting for variation at both the study and observation (effect size) levels, while also modelling correlated sampling errors within studies.
 
 Given $j$ effect sizes within $i$ studies, we specify the model as:
 
@@ -794,7 +794,7 @@ We can fit the same model with `metafor` with the `rma` function and using the `
 fit_ls_rma <- rma(yi, vi, 
                   mods = ~ ni,
                   scale = ~ ni,
-                  control=list(REMLf=FALSE), #this is to get the same log-likelihood
+                  control=list(REMLf=FALSE), #this provides the same log-likelihood as glmmTMB
                   data = dat)
 ```
 
@@ -804,14 +804,16 @@ By default `metafor` uses the variance for the scale, whereas `glmmTMB` uses the
 
 # Useful notes and links
 
-## Changing optimization method in `glmmTMB`
+## Changing optimization method in `glmmTMB` {.unnumbered}
 
-We can change the optimization method using by modifying the `control = glmmTMBControl()` argument. By default, `glmmTMB` uses the `nlminb` non-linear optimizer for parameter estimation. 
+In some cases, the default optimization method may not converge or can yield warning messages. In such cases, you can try alternative optimization methods by modifying the `control = glmmTMBControl()` argument. By default, `glmmTMB` uses the `nlminb` non-linear optimizer for parameter estimation. 
+
+Further information on optimization methods and troubleshooting convergence and warning messages can be found in the `glmmTMB` documentation:
 
 -   [Troubleshooting with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
 
 
-## Covariance structures in `glmmTMB`
+## Covariance structures in `glmmTMB` {.unnumbered}
 
 The `glmmTMB` package offers a variety of covariance structures that can be used to model different types of dependencies in the data. A list of available covariance structures and their applications can be found in the package documentation:
 
@@ -822,6 +824,8 @@ The `glmmTMB` package offers a variety of covariance structures that can be used
 # References
 
 Bangert-Drowns, R. L., Hurley, M. M., & Wilkinson, B. (2004). _The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis_. Review of Educational Research, 74, 29-58.
+
+Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M., & Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. R Journal, 9(2), 378–400. <https://doi.org/10.32614/RJ-2017-066>
 
 Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). _Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature_. Journal of the American Medical Association, 271(9), 698–702. <https://doi.org/10.1001/jama.1994.03510330076038>
 
@@ -836,19 +840,20 @@ White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Ana
 # Session info
 
 ```{r}
-#| label: Reproducibility-SessionInfo-R-environment
-#| echo: false
+#| label: Reproducibility-SessionInfo-R-environment 
+#| fig-align: "center" 
+#| out-width: '100%' 
+#| results: asis 
+#| message: false 
+#| warnings: false 
 
-pkgs <- loadedNamespaces()
+library(sessioninfo) 
+library(details) 
 
-pkg_versions <- data.frame(
-  Package = pkgs,
-  Version = vapply(pkgs, function(x) as.character(utils::packageVersion(x)), character(1)),
-  row.names = NULL
+
+suppressWarnings(
+  details::details(session_info(), summary = 'Current session info', open = FALSE)
 )
 
-pkg_versions <- pkg_versions[order(pkg_versions$Package), ]
-
-knitr::kable(pkg_versions, align = c("l", "l"))
 ```
 
