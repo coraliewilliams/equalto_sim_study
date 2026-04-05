@@ -1,5 +1,5 @@
 # -------------------
-# Run simultations 
+# Run simulations 
 # author: Coralie Williams 
 
 ##### Performance measures to record

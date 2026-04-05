@@ -1,11 +1,11 @@
-library(ggplot2);library(devtools);library(cowplot);library(ggdark);theme_set(dark_theme_bw())
+library(ggplot2);library(devtools);library(cowplot);
 library(ggdist);library(tidyverse);library(dplyr);library(patchwork); library(scales);
 library(latex2exp); library(xtable); library(grid);library(readr); library(data.table)
 
 #### For plots
 theme_update(plot.title = element_text(colour = "black"))
 
-# color-blind friendly palette (Okabe–Ito), in hex
+# color-blind friendly palette (Okabe–Ito)
 col.m <- c(
   SMD  = "#0072B2",  # blue
   lnRR = "#009E73",  # green
@@ -14,7 +14,7 @@ col.m <- c(
 )
 col.m.pastel <- alpha(col.m, 0.4)
 
-# load result files
+# load simulation result files (one for each effect size measure)
 res_smd <- read_csv("results/res_smd.csv")
 res_lnrr <- read_csv("results/res_lnrr.csv")
 res_OR <- read_csv("results/res_OR.csv")
@@ -22,6 +22,24 @@ res_IRR <- read_csv("results/res_IRR.csv")
 
 
 ################# 1. Convergence #########################
+
+# #### There are zero "error" messages for all simulated models
+# res_smd[!is.na(res_smd$error),]
+# res_lnrr[!is.na(res_lnrr$error),]
+# res_OR[!is.na(res_OR$error),]
+# res_IRR[!is.na(res_IRR$error),]
+# #### Only IRR and OR have warning messages
+# res_smd[!is.na(res_smd$warn),]
+# res_lnrr[!is.na(res_lnrr$warn),]
+# res_OR[!is.na(res_OR$warn),]
+# res_IRR[!is.na(res_IRR$warn),]
+
+# # overview of type of warning messages / which loglikelihoods were NA
+# table(res_OR$warn)
+# table(res_IRR$warn)
+# res_OR[is.na(res_OR$logLik),]
+# res_OR[is.na(res_IRR$logLik),]
+
 
 res_smd$conv <- is.na(res_smd$warn)&is.na(res_smd$error)
 res_lnrr$conv <- is.na(res_lnrr$warn)&is.na(res_lnrr$error)
@@ -34,10 +52,11 @@ table(res_lnrr$model, res_lnrr$conv)/6000*100
 table(res_OR$model, res_OR$conv)/12000*100
 table(res_IRR$model, res_IRR$conv)/12000*100
 
-# not captured in the above datasets
+# not captured in the above output:
 ## -- for OR - 1 rma.uni_OR model did not return anything (Fisher score didn't converge)
-## -- for IRR - 171 rma.glmm_IRR mdoels did not return anything ("step size truncated due to divergence")
-# ---> see 03_run_sims.R script CHECKS at the end for more details
+## -- for IRR - 171 rma.glmm_IRR models did not return anything ("step size truncated due to divergence")
+# ---> see 03_run_sims.R script CHECKS at the end (line 429) for more details
+
 
 
 ################## 2. Formatting ##########################
@@ -65,25 +84,79 @@ res_OR$true_tau2 <- ifelse(m > 0, as.numeric(sub("tau2=([^ ]+).*", "\\1", regmat
 m <- regexpr("tau2=([0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?\\d+)?)", res_IRR$scenario, perl = TRUE)
 res_IRR$true_tau2 <- ifelse(m > 0, as.numeric(sub("tau2=([^ ]+).*", "\\1", regmatches(res_IRR$scenario, m))), NA_real_)
 
+
+### Filter out all sim repetitions if at least one model had a convergence warning or didn't compute
+
 # remove all sim repetitions where rma.glmm didn't converge (no result) for proper comparison
 # this is for the plot of agreement Poisson-Normal
 res_IRR2 <- res_IRR |>
   group_by(param_id) |>
   filter(n() >= 4) |>
   ungroup()
-
 # remove sim repetitions where rma.uni didn't converge (no result) for proper comparison
 res_OR2 <- res_OR |> 
   filter(param_id != "11046") 
 
+
 ## Bind all results from effect size measures
-res <- bind_rows(
+res_all <- bind_rows(
   res_smd,
   res_lnrr,
   res_OR2,
-  res_IRR2,
-  .id = "source"   # optional: labels row origins as "1","2","3","4"
+  res_IRR2
 )
+
+## Keep only models with no warnings
+# i.e. filter out non-converge/warnings for all models but grouping them by name
+group1 <- c("rma.uni", "glmmTMB_RE")
+group2 <- c("rma.glmm_OR", "glmmTMB.binomial.1", "glmmTMB.binomial.2", 
+            "rma.glmm_IRR", "glmmTMB.poisson")
+
+res <- res_all |>
+  mutate(model_group = dplyr::case_when(
+      model %in% group1 ~ "group1_NN",
+      model %in% group2 ~ "group2_GLMM",
+      TRUE ~ NA_character_ )) |>
+  filter(!is.na(model_group)) |>
+  group_by(param_id, scenario, measure, model_group) |>
+  filter(!any(conv == FALSE, na.rm = TRUE)) |>
+  ungroup()
+
+
+#### Summaries for latex tables of convergence for Supplementary Materials 
+# All sim results (Table S2)
+tab.all <- as.data.frame(table(res_all$conv, res_all$model, res_all$measure))
+res_all_summary <- tab.all |> 
+  filter((Var2 == "rma.uni" | Var2 == "glmmTMB_RE" |
+            Var2 == "rma.glmm_OR" | Var2 == "glmmTMB.binomial.1" | Var2 == "glmmTMB.binomial.2" | 
+            Var2 == "rma.glmm_IRR" |  Var2 == "glmmTMB.poisson" ) & Var1 == TRUE) |> 
+  dplyr::select(Var2, Var3, Freq) |> 
+  pivot_wider(names_from = Var3, values_from = Freq) |> 
+  mutate(model = factor(Var2, levels=c("rma.uni", "glmmTMB_RE", "rma.glmm_OR",
+                                       "glmmTMB.binomial.1", "glmmTMB.binomial.2",
+                                       "rma.glmm_IRR", "glmmTMB.poisson"))) |> 
+  arrange(model)
+
+
+# Converged sim results (Table S3)
+tab.all <- as.data.frame(table(res$conv, res$model, res$measure))
+res_all_summary <- tab.all |> 
+  filter((Var2 == "rma.uni" | Var2 == "glmmTMB_RE" |
+            Var2 == "rma.glmm_OR" | Var2 == "glmmTMB.binomial.1" | Var2 == "glmmTMB.binomial.2" | 
+            Var2 == "rma.glmm_IRR" |  Var2 == "glmmTMB.poisson" ) & Var1 == TRUE) |> 
+  dplyr::select(Var2, Var3, Freq) |> 
+  pivot_wider(names_from = Var3, values_from = Freq) |> 
+  mutate(model = factor(Var2, levels=c("rma.uni", "glmmTMB_RE", "rma.glmm_OR",
+                                       "glmmTMB.binomial.1", "glmmTMB.binomial.2",
+                                       "rma.glmm_IRR", "glmmTMB.poisson"))) |> 
+  arrange(model)
+
+
+
+
+
+################# 3. Derive sim results on converged cases ####################
+
 
 # derive Wald z-test CI - forgot to store CI - and save pvalue for plots
 zcrit  <- qnorm(1 - 0.05/2)
@@ -108,88 +181,52 @@ res$cov_mu_t <- res$mu >= res$mu_ci_lb_t & res$mu <= res$mu_ci_ub_t
 
 # sampling variance
 res_sample_var <- res |> 
-  group_by(model, scenario, measure) |>
   summarise(mu_S2 = sum((mu - mean(mu))^2) / (n() - 1),
-            tau2_S2 = sum((tau2 - mean(tau2))^2) / (n() - 1)) |> 
-  ungroup()
-
-
-################# 3. Derive sim results ####################
+            tau2_S2 = sum((tau2 - mean(tau2))^2) / (n() - 1),
+            .by = c(measure, model, scenario))
 
 # RMSE dataset for overall mean mu 
 rmse.dat.mu <- res |> 
-  group_by(measure, model, scenario) |> 
-  summarise(rmse = sqrt(mean((mu - est)^2))) |> 
-  ungroup()
+  summarise(rmse = sqrt(mean((mu - est)^2)),
+            .by = c(measure, model, scenario))
 
 # RMSE dataset for overall mean mu 
 rmse.dat.tau2 <- res |> 
-  group_by(measure, model, scenario) |> 
-  summarise(rmse = sqrt(mean((true_tau2 - tau2)^2))) |> 
-  ungroup()
+  summarise(rmse = sqrt(mean((true_tau2 - tau2)^2)),
+            .by = c(measure, model, scenario))
 
 # coverage
 cov.dat <- res |> 
-  group_by(measure, model, scenario) |> 
   summarise(cov_prop = mean(cov_mu, na.rm = TRUE),
-            n = n()) |> 
-  ungroup()
-
+            n = n(),
+            .by = c(measure, model, scenario))
 
 # CI width dataset for overall mean mu 
 ci.dat <- res |> 
-  group_by(measure, model, scenario) |> 
   summarise(ci_width = mean(mu_ci_width, na.rm = TRUE),
-            n = n()) |> 
-  ungroup()
+            n = n(),
+            .by = c(measure, model, scenario))
 
 # Type I error
 typeI.dat <- res |>
   filter(mu == 0) |>
-  group_by(measure, model, scenario) |>
-  summarise(typeI = mean(p_wald < 0.05, na.rm = TRUE),
-            n = sum(!is.na(p_wald))) |>
-  ungroup()
+  summarise(typeI = mean(pvalue < 0.05, na.rm = TRUE),
+            n = sum(!is.na(p_wald)),
+            .by = c(measure, model, scenario))
 
 # Power 
 power.dat <- res |>
   filter(mu != 0) |> 
-  group_by(measure, model, scenario) |> 
   summarise(power = 1 - mean(p_wald > 0.05, na.rm = TRUE),
-            n = n()) |> 
-  ungroup()
-
-# get latex tables of convergence summaries
-tab.conv <- as.data.frame(table(res$conv, res$model, res$measure))
-
-res_conv_summary <- tab.conv |> 
-  filter((Var2 == "rma.uni" | Var2 == "glmmTMB_RE") & Var1 == TRUE) |> 
-  dplyr::select(Var2, Var3, Freq) |> 
-  pivot_wider(names_from = Var3, values_from = Freq) |> 
-  mutate(model = factor(Var2, levels=c("rma.uni", "glmmTMB_RE"))) |> 
-  arrange(model)
-
-# Create summary tables of convergence % for Supp. information
-# print(xtable(res_conv_summary, digits = 1),
-#       include.rownames = FALSE)
-
-# % Thu Nov 13 22:10:23 2025
-# \begin{table}[ht]
-# \centering
-# \begin{tabular}{lrrrrl}
-# \hline
-# Var2 & IRR & lnRR & OR & SMD & model \\ 
-# \hline
-# rma.uni & 100 & 99.60 & 99.99 & 100 & rma.uni \\ 
-# glmmTMB\_RE & 68.0 & 99.98 & 79.1 & 100 & glmmTMB\_RE \\ 
-# \hline
-# \end{tabular}
-# \end{table}
+            n = n(),
+            .by = c(measure, model, scenario))
 
 
 
 
-############### 3. Plots/Tables - runtime ###############
+
+
+############### 4. Plots/Tables - runtime ###############
 
 # table mean runtime
 res_runtime <- res |>
@@ -201,6 +238,8 @@ res_runtime <- res |>
   )
 print(xtable(res_runtime, digits = c(0, 0, 0, 2, 2, 0)),
       include.rownames = FALSE)
+
+
 
 # plot for SMD and lnRR
 p_rt1 <- res |>
@@ -253,113 +292,71 @@ ggsave(filename = "results/figures/Figure_runtime.pdf", width = 5, height = 12)
 
 
 
-################ 4. Plots/tables - RMSE mu and tau2 ###############
 
-######### mu RMSE ---
-# plot for SMD and lnRR
-p_rmsea <- rmse.dat.mu |>
-  filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
-  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+
+
+# plot for log10 SMD and lnRR
+p_logrt1 <- res |>
+  filter(measure %in% c("SMD", "lnRR"),
+         model %in% c("rma.uni", "glmmTMB_RE")) |> 
+  ggplot(aes(x = model, y = runtime+0.001, colour = measure, fill = measure)) +
   geom_boxplot() +
+  scale_y_log10() + 
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   facet_wrap(~ measure, scales = "free_y", ncol = 2) +
   theme_bw() +
-  labs(y = TeX("$\\hat{\\mu}$ RMSE"), title="lnRR and SMD") +
+  labs(y = "time(sec)", title="lnRR and SMD") +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45, hjust = 1))
 
-# plot for OR
-p_rmseb <- rmse.dat.mu |>
+# plot for oR
+p_logrt2 <- res |>
   filter(measure %in% c("OR")) |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
-  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  ggplot(aes(x = model, y = runtime+0.001, colour = measure, fill = measure)) +
   geom_boxplot() +
+  scale_y_log10() + 
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
-  labs(y = TeX("$\\hat{\\mu}$ RMSE"), title="OR") +
+  labs(y = "time(sec)", title="OR") +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45, hjust = 1))
 
 # plot for IRR
-p_rmsec <- rmse.dat.mu |>
+p_logrt3 <- res |>
   filter(measure %in% c("IRR")) |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
-  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  ggplot(aes(x = model, y = runtime+0.001, colour = measure, fill = measure)) +
   geom_boxplot() +
+  scale_y_log10() + 
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
-  labs(y = TeX("$\\hat{\\mu}$ RMSE"), title="IRR") +
+  labs(y = "time(sec)", title="IRR") +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45, hjust = 1))
 
 ### pathwork for runtime figure
-plot_rmse <- p_rmsea + p_rmseb + p_rmsec +
+plot_logrt <- p_logrt1 + p_logrt2 + p_logrt3 +
   plot_layout(ncol=1, guides = "collect") +
   plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
-ggsave(filename = "results/figures/Figure_RMSE_mu.pdf", width = 5, height = 11)
-
-
-######### tau2 RMSE ---
-# plot for SMD and lnRR
-p_rmsea <- rmse.dat.tau2 |>
-  filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
-  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
-  geom_boxplot() +
-  scale_colour_manual(values = col.m) +
-  scale_fill_manual(values = col.m.pastel) +
-  facet_wrap(~ measure, scales = "free_y", ncol = 2) +
-  theme_bw() +
-  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="lnRR and SMD") +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-# plot for OR
-p_rmseb <- rmse.dat.tau2 |>
-  filter(measure %in% c("OR")) |>
-  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
-                                          "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
-  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
-  geom_boxplot() +
-  scale_colour_manual(values = col.m) +
-  scale_fill_manual(values = col.m.pastel) +
-  theme_bw() +
-  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="OR") +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-# plot for IRR
-p_rmsec <- rmse.dat.tau2 |>
-  filter(measure %in% c("IRR")) |>
-  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
-                                          "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
-  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
-  geom_boxplot() +
-  scale_colour_manual(values = col.m) +
-  scale_fill_manual(values = col.m.pastel) +
-  theme_bw() +
-  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="IRR") +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-### pathwork for runtime figure
-plot_rmse <- p_rmsea + p_rmseb + p_rmsec +
-  plot_layout(ncol=1, guides = "collect") +
-  plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
-
-ggsave(filename = "results/figures/Figure_RMSE_tau2.pdf", width = 5, height = 11)
+ggsave(filename = "results/figures/Figure_logruntime.pdf", width = 5, height = 12)
+ggsave(filename = "results/figures/Figure_logruntime.png", width = 5, height = 12)
 
 
 
-################ 5. Plots/tables - estimate agreements mu and tau2 ###############
+
+
+
+################ 5. Plots - converged results agreements ###############
 
 #### NORMAL-NORMAL
-# mu estimate dataset - package aggreement
+# (1) mu estimate dataset - package agreement
 mu_hat <- res |> 
   filter(model %in% c("rma.uni", "glmmTMB_RE")) |> 
   group_by(measure, model) |> 
@@ -385,8 +382,34 @@ plot_mu <- ggplot(mu_hat, aes(x = `rma.uni`, y = glmmTMB_RE, colour = measure)) 
   theme(legend.position = "none")
 
 
-# tau2 estimate dataset - package aggreement
-tau2_hat <- res |> 
+# (2) mu SE dataset - package difference
+mu_se_hat <- res |> 
+  filter(model %in% c("rma.uni", "glmmTMB_RE")) |> 
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(),
+         measure = factor(measure, levels = c("SMD", "lnRR", "OR", "IRR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, se) |> 
+  pivot_wider(names_from = model, values_from = se) |> 
+  drop_na(`rma.uni`, glmmTMB_RE) 
+
+# plot
+plot_mu_se <- ggplot(mu_se_hat, aes(x = `rma.uni`, y = glmmTMB_RE, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ measure, scales="free", ncol=4) +
+  labs(
+    x = TeX("$\\hat{\\mu}$ standard error rma.uni"),
+    y = TeX("$\\hat{\\mu}$ standard error glmmTMB"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+# (3) tau2 estimate dataset - package agreement
+tau2_hat <- res_all |> 
   filter(model %in% c("rma.uni", "glmmTMB_RE")) |> 
   group_by(measure, model) |> 
   mutate(.idx = row_number(),
@@ -396,7 +419,6 @@ tau2_hat <- res |>
   pivot_wider(names_from = model, values_from = tau2) |> 
   drop_na(`rma.uni`, glmmTMB_RE) 
 
-# plot
 plot_tau2 <- ggplot(tau2_hat, aes(x = `rma.uni`, y = glmmTMB_RE, colour = measure)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   geom_point(alpha = 0.75) +
@@ -410,17 +432,18 @@ plot_tau2 <- ggplot(tau2_hat, aes(x = `rma.uni`, y = glmmTMB_RE, colour = measur
   theme_bw() +
   theme(legend.position = "none")
 
-
 ### patchwork for figure of estimates
-plot_est <- plot_mu + plot_tau2 + 
+plot_est <- plot_mu + plot_mu_se + plot_tau2 + 
   plot_layout(ncol=1, guides = "collect") +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
-ggsave(filename = "results/figures/Figure_sim_estimates.pdf", width = 11, height = 7)
+ggsave(filename = "results/figures/Figure_NormalNormal_converged.pdf", width = 11, height = 9)
+ggsave(filename = "results/figures/Figure_NormalNormal_converged.png", width = 11, height = 9)
+
 
 
 #### BINOMIAL-NORMAL
-# mu estimate plot - package aggreement
+# mu estimate plot - package agreement
 mu_hat_binom_plot <- res |> 
   filter(model %in% c("glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR")) |> 
   group_by(measure, model) |> 
@@ -447,7 +470,34 @@ mu_hat_binom_plot <- res |>
   theme(legend.position = "none")
 
 
-# mu estimate plot - package aggreement
+# mu SE plot - package agreement
+mu_se_binom_plot <- res |> 
+  filter(model %in% c("glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR")) |> 
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("OR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, se) |>
+  pivot_wider(names_from = model, values_from = se) |>
+  drop_na(rma.glmm_OR, `glmmTMB.binomial.1`, `glmmTMB.binomial.2`) |> 
+  #stack the two glmmTMB models for faceting
+  pivot_longer(cols = c(`glmmTMB.binomial.1`, `glmmTMB.binomial.2`),
+               names_to = "glmm_model",
+               values_to = "est_glmm") |> 
+  ggplot(aes(x = rma.glmm_OR, y = est_glmm, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ glmm_model, ncol = 2, scales = "free") +
+  labs(
+    x = TeX("$\\hat{\\mu}$ standard error rma.glmm[OR]"),
+    y = TeX("$\\hat{\\mu}$ standard error glmmTMB"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+# tau2 estimate plot - package aggreement
 tau2_hat_binom_plot <- res |> 
   filter(model %in% c("glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR")) |> 
   group_by(measure, model) |> 
@@ -474,18 +524,16 @@ tau2_hat_binom_plot <- res |>
   theme(legend.position = "none")
 
 ### patchwork for figure of estimates
-plot_est_binom <- mu_hat_binom_plot + tau2_hat_binom_plot + 
+plot_est_binom <- mu_hat_binom_plot + mu_se_binom_plot + tau2_hat_binom_plot + 
   plot_layout(ncol=1, guides = "collect") +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
-ggsave(filename = "results/figures/Figure_binom_res.pdf", width = 8, height = 10)
-
-
+ggsave(filename = "results/figures/Figure_binom_converged.pdf", width = 7, height = 10)
 
 
 #### POISSON-NORMAL
 # mu estimate plot - package agreement
-mu_hat_pois_plot <- res_IRR2 |> ##use filtered IRR
+mu_hat_pois_plot <- res |> 
   filter(model %in% c("glmmTMB.poisson", "rma.glmm_IRR")) |>
   group_by(measure, model) |> 
   mutate(.idx = row_number(), measure = factor(measure, levels = c("IRR"))) |> 
@@ -506,7 +554,7 @@ mu_hat_pois_plot <- res_IRR2 |> ##use filtered IRR
   theme(legend.position = "none")
 
 # mu SE plot - package agreement
-mu_se_pois_plot <- res_IRR2 |> ##use filtered IRR
+mu_se_pois_plot <- res |> 
   filter(model %in% c("glmmTMB.poisson", "rma.glmm_IRR")) |>
   group_by(measure, model) |> 
   mutate(.idx = row_number(), measure = factor(measure, levels = c("IRR"))) |> 
@@ -521,14 +569,14 @@ mu_se_pois_plot <- res_IRR2 |> ##use filtered IRR
   labs(
     x = TeX("$\\hat{\\mu}$ standard error rma.glmm[IRR]"),
     y = TeX("$\\hat{\\mu}$ standard error glmmTMB"),
-    title = "Poisson–Normal models agreement"
+    title = ""
   ) +
   theme_bw() +
   theme(legend.position = "none")
 
 
 # tau2 estimate plot - package agreement
-tau2_hat_pois_plot <- res_IRR2 |> ##use filtered IRR
+tau2_hat_pois_plot <- res |> 
   filter(model %in% c("glmmTMB.poisson", "rma.glmm_IRR")) |>
   group_by(measure, model) |> 
   mutate(.idx = row_number(), measure = factor(measure, levels = c("IRR"))) |> 
@@ -550,26 +598,389 @@ tau2_hat_pois_plot <- res_IRR2 |> ##use filtered IRR
 
 
 ### patchwork for figure of estimates
-plot_est_poisson <- mu_hat_pois_plot / tau2_hat_pois_plot + 
+plot_est_poisson <- mu_hat_pois_plot + mu_se_pois_plot + tau2_hat_pois_plot + 
   plot_layout(ncol=1, guides = "collect") +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 
-ggsave(filename = "results/figures/Figure_poisson_res.pdf", width = 5, height = 10)
+ggsave(filename = "results/figures/Figure_poisson_converged.pdf", width = 5, height = 10)
+
+
+
+
+################ 6. Plots - converged results differences ###############
+
+#### NORMAL-NORMAL
+# (1) mu estimate dataset - package differences
+plot_mu_diff <- ggplot(
+  mu_hat |> mutate(diff = `rma.uni` - glmmTMB_RE),
+  aes(x = `rma.uni`, y = diff, colour = measure)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  #scale_y_continuous(limits=c(-0.0001, 0.0001))+
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ measure, scales = "free_x", ncol = 4) +
+  labs(
+    x = TeX("$\\hat{\\mu}$ rma.uni"),
+    y = TeX("$\\hat{\\mu}$ difference (rma $-$ glmmTMB)"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+# (2) mu SE dataset - package difference
+plot_mu_se_diff <- ggplot(
+  mu_se_hat |> mutate(diff = `rma.uni` - glmmTMB_RE),
+  aes(x = `rma.uni`, y = diff, colour = measure)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  #scale_y_continuous(limits=c(-0.0001, 0.0001))+
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ measure, scales = "free_x", ncol = 4) +
+  labs(
+    x = TeX("$\\hat{\\mu}$ SE rma.uni"),
+    y = TeX("$\\hat{\\mu}$ SE difference (rma $-$ glmmTMB)"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+# (3) tau2 estimate dataset - package difference
+plot_tau2_diff <- ggplot(
+  tau2_hat |> mutate(diff = `rma.uni` - glmmTMB_RE),
+  aes(x = `rma.uni`, y = diff, colour = measure)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  #scale_y_continuous(limits=c(-0.0001, 0.0001))+
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ measure, scales = "free_x", ncol = 4) +
+  labs(
+    x = TeX("$\\hat{\\tau^2}$ rma.uni"),
+    y = TeX("$\\hat{\\tau^2}$ difference (rma $-$ glmmTMB)"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+### patchwork for figure of estimates difference format
+plot_est_diff <- plot_mu_diff + plot_mu_se_diff + plot_tau2_diff + 
+  plot_layout(ncol=1, guides = "collect") +
+  plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+
+ggsave(filename = "results/figures/Figure_NormalNormal_converged_diff.png", width = 11, height = 9)
+
+
+
+
+
+#### BINOMIAL-NORMAL
+# mu estimate plot - package difference
+mu_hat_binom_plot <- res |> 
+  filter(model %in% c("glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR")) |> 
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("OR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, est) |>
+  pivot_wider(names_from = model, values_from = est) |>
+  drop_na(rma.glmm_OR, `glmmTMB.binomial.1`, `glmmTMB.binomial.2`) |> 
+  #stack the two glmmTMB models for faceting
+  pivot_longer(cols = c(`glmmTMB.binomial.1`, `glmmTMB.binomial.2`),
+               names_to = "glmm_model",
+               values_to = "est_glmm") |> 
+  ggplot(aes(x = rma.glmm_OR, y = est_glmm, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ glmm_model, ncol = 2, scales = "free") +
+  labs(
+    x = TeX("$\\hat{\\mu}$ rma.glmm[OR]"),
+    y = TeX("$\\hat{\\mu}$ glmmTMB"),
+    title = "Binomial-Normal models agreement"
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+# mu SE plot - package difference
+mu_se_binom_plot <- res |> 
+  filter(model %in% c("glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR")) |> 
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("OR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, se) |>
+  pivot_wider(names_from = model, values_from = se) |>
+  drop_na(rma.glmm_OR, `glmmTMB.binomial.1`, `glmmTMB.binomial.2`) |> 
+  #stack the two glmmTMB models for faceting
+  pivot_longer(cols = c(`glmmTMB.binomial.1`, `glmmTMB.binomial.2`),
+               names_to = "glmm_model",
+               values_to = "est_glmm") |> 
+  ggplot(aes(x = rma.glmm_OR, y = est_glmm, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ glmm_model, ncol = 2, scales = "free") +
+  labs(
+    x = TeX("$\\hat{\\mu}$ standard error rma.glmm[OR]"),
+    y = TeX("$\\hat{\\mu}$ standard error glmmTMB"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+# tau2 estimate plot - package aggreement
+tau2_hat_binom_plot <- res |> 
+  filter(model %in% c("glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR")) |> 
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("OR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, tau2) |>
+  pivot_wider(names_from = model, values_from = tau2) |>
+  drop_na(rma.glmm_OR, `glmmTMB.binomial.1`, `glmmTMB.binomial.2`) |> 
+  #stack the two glmmTMB models for faceting
+  pivot_longer(cols = c(`glmmTMB.binomial.1`, `glmmTMB.binomial.2`),
+               names_to = "glmm_model",
+               values_to = "est_glmm") |> 
+  ggplot(aes(x = rma.glmm_OR, y = est_glmm, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  facet_wrap(~ glmm_model, ncol = 2, scales = "free") +
+  labs(
+    x = TeX("$\\hat{\\tau^2}$ rma.glmm[OR]"),
+    y = TeX("$\\hat{\\tau^2}$ glmmTMB"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+### patchwork for figure of estimates
+plot_est_binom <- mu_hat_binom_plot + mu_se_binom_plot + tau2_hat_binom_plot + 
+  plot_layout(ncol=1, guides = "collect") +
+  plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+
+ggsave(filename = "results/figures/Figure_binom_converged.pdf", width = 7, height = 10)
+
+
+#### POISSON-NORMAL
+# mu estimate plot - package agreement
+mu_hat_pois_plot <- res |> 
+  filter(model %in% c("glmmTMB.poisson", "rma.glmm_IRR")) |>
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("IRR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, est) |>
+  pivot_wider(names_from = model, values_from = est) |>
+  drop_na(`rma.glmm_IRR`, `glmmTMB.poisson`) |>
+  ggplot(aes(x = `rma.glmm_IRR`, y = glmmTMB.poisson, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  labs(
+    x = TeX("$\\hat{\\mu}$ rma.glmm[IRR]"),
+    y = TeX("$\\hat{\\mu}$ glmmTMB"),
+    title = "Poisson–Normal models agreement"
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+# mu SE plot - package agreement
+mu_se_pois_plot <- res |> 
+  filter(model %in% c("glmmTMB.poisson", "rma.glmm_IRR")) |>
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("IRR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, se) |>
+  pivot_wider(names_from = model, values_from = se) |>
+  drop_na(`rma.glmm_IRR`, `glmmTMB.poisson`) |>
+  ggplot(aes(x = `rma.glmm_IRR`, y = glmmTMB.poisson, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  labs(
+    x = TeX("$\\hat{\\mu}$ standard error rma.glmm[IRR]"),
+    y = TeX("$\\hat{\\mu}$ standard error glmmTMB"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+# tau2 estimate plot - package agreement
+tau2_hat_pois_plot <- res |> 
+  filter(model %in% c("glmmTMB.poisson", "rma.glmm_IRR")) |>
+  group_by(measure, model) |> 
+  mutate(.idx = row_number(), measure = factor(measure, levels = c("IRR"))) |> 
+  ungroup() |> 
+  select(measure, model, .idx, tau2) |>
+  pivot_wider(names_from = model, values_from = tau2) |>
+  drop_na(`rma.glmm_IRR`, `glmmTMB.poisson`) |>
+  ggplot(aes(x = `rma.glmm_IRR`, y = glmmTMB.poisson, colour = measure)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.75) +
+  scale_colour_manual(values = col.m) +
+  labs(
+    x = TeX("$\\hat{\\tau^2}$ rma.glmm[IRR]"),
+    y = TeX("$\\hat{\\tau^2}$ glmmTMB"),
+    title = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+### patchwork for figure of estimates
+plot_est_poisson <- mu_hat_pois_plot + mu_se_pois_plot + tau2_hat_pois_plot + 
+  plot_layout(ncol=1, guides = "collect") +
+  plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+
+
+ggsave(filename = "results/figures/Figure_poisson_converged.pdf", width = 5, height = 10)
+
+
+
+
+
+################ 7. Plots - RMSE for mu and tau2 ###############
+
+######### mu RMSE ---
+# plot for SMD and lnRR
+p_rmsea <- rmse.dat.mu |>
+  filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 2) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\mu}$ RMSE"), title="lnRR and SMD") +
+  theme(legend.position = "none")
+
+
+# plot for OR
+p_rmseb <- rmse.dat.mu |>
+  filter(measure %in% c("OR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\mu}$ RMSE"), title="OR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# plot for IRR
+p_rmsec <- rmse.dat.mu |>
+  filter(measure %in% c("IRR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\mu}$ RMSE"), title="IRR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+### pathwork for runtime figure
+plot_rmse <- p_rmsea + p_rmseb + p_rmsec +
+  plot_layout(ncol=1, guides = "collect") +
+  plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+
+ggsave(filename = "results/figures/Figure_RMSE_mu.pdf", width = 5, height = 11)
+ggsave(filename = "results/figures/Figure_RMSE_mu.png", width = 5, height = 11)
+
+
+
+######### tau2 RMSE ---
+# plot for SMD and lnRR
+p_rmsea <- rmse.dat.tau2 |>
+  filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 2) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="lnRR and SMD") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# plot for OR
+p_rmseb <- rmse.dat.tau2 |>
+  filter(measure %in% c("OR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="OR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# plot for IRR
+p_rmsec <- rmse.dat.tau2 |>
+  filter(measure %in% c("IRR")) |>
+  mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
+                                          "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
+  ggplot(aes(x = model, y = rmse, colour = measure, fill = measure)) +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
+  scale_colour_manual(values = col.m) +
+  scale_fill_manual(values = col.m.pastel) +
+  theme_bw() +
+  labs(y = TeX("$\\hat{\\tau^2}$ RMSE"), title="IRR") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+### pathwork for runtime figure
+plot_rmse <- p_rmsea + p_rmseb + p_rmsec +
+  plot_layout(ncol=1, guides = "collect") +
+  plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+
+ggsave(filename = "results/figures/Figure_RMSE_tau2.pdf", width = 5, height = 11)
+ggsave(filename = "results/figures/Figure_RMSE_tau2.png", width = 5, height = 11)
 
 
 
 
 
 
-################ 6. Plots/tables - inference overall mean ###############
+
+
+
+
+
+
+
+
+################ 8. Plots - inference overall mean ###############
 
 #### 95% Coverate rate --------
 # plot for SMD and lnRR
 p_cova <- cov.dat |>
   filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
   ggplot(aes(x = model, y = cov_prop, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   facet_wrap(~ measure, scales = "free_y", ncol = 2) +
@@ -584,7 +995,9 @@ p_covb <- cov.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
   ggplot(aes(x = model, y = cov_prop, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -598,7 +1011,9 @@ p_covc <- cov.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
   ggplot(aes(x = model, y = cov_prop, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -612,6 +1027,7 @@ plot_cov <- p_cova + p_covb + p_covc +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 ggsave(filename = "results/figures/Figure_coverage_mu.pdf", width = 5, height = 11)
+ggsave(filename = "results/figures/Figure_coverage_mu.png", width = 5, height = 11)
 
 
 #### 95% CI widths --------
@@ -619,7 +1035,9 @@ ggsave(filename = "results/figures/Figure_coverage_mu.pdf", width = 5, height = 
 p_cia <- ci.dat |>
   filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
   ggplot(aes(x = model, y = ci_width, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   facet_wrap(~ measure, scales = "free_y", ncol = 2) +
@@ -634,7 +1052,9 @@ p_cib <- ci.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
   ggplot(aes(x = model, y = ci_width, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -648,7 +1068,9 @@ p_cic <- ci.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
   ggplot(aes(x = model, y = ci_width, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -662,6 +1084,7 @@ plot_ci <- p_cia + p_cib + p_cic +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 ggsave(filename = "results/figures/Figure_ci_width_mu.pdf", width = 5, height = 11)
+ggsave(filename = "results/figures/Figure_ci_width_mu.png", width = 5, height = 11)
 
 
 
@@ -671,7 +1094,9 @@ ggsave(filename = "results/figures/Figure_ci_width_mu.pdf", width = 5, height = 
 p_typeIa <- typeI.dat |>
   filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
   ggplot(aes(x = model, y = typeI, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   facet_wrap(~ measure, scales = "free_y", ncol = 2) +
@@ -686,7 +1111,9 @@ p_typeIb <- typeI.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
   ggplot(aes(x = model, y = typeI, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -700,7 +1127,9 @@ p_typeIc <- typeI.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
   ggplot(aes(x = model, y = typeI, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -711,9 +1140,10 @@ p_typeIc <- typeI.dat |>
 ### pathwork for figure
 plot_typeI <- p_typeIa + p_typeIb + p_typeIc +
   plot_layout(ncol=1, guides = "collect") +
-  plot_annotation(title = "Type I error rate", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
+  plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 ggsave(filename = "results/figures/Figure_typeIerror.pdf", width = 5, height = 11)
+ggsave(filename = "results/figures/Figure_typeIerror.png", width = 5, height = 11)
 
 
 
@@ -723,7 +1153,9 @@ ggsave(filename = "results/figures/Figure_typeIerror.pdf", width = 5, height = 1
 p_powera <- power.dat |>
   filter(measure %in% c("SMD", "lnRR"), model %in% c("rma.uni", "glmmTMB_RE")) |> 
   ggplot(aes(x = model, y = power, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   facet_wrap(~ measure, scales = "free_y", ncol = 2) +
@@ -738,7 +1170,9 @@ p_powerb <- power.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.binomial.1",  "glmmTMB.binomial.2", "rma.glmm_OR"))) |> 
   ggplot(aes(x = model, y = power, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -752,7 +1186,9 @@ p_powerc <- power.dat |>
   mutate(model = factor(model, levels = c("glmmTMB_RE", "rma.uni",
                                           "glmmTMB.poisson", "rma.glmm_IRR"))) |> 
   ggplot(aes(x = model, y = power, colour = measure, fill = measure)) +
-  geom_boxplot() +
+  #coord_flip() +
+  stat_halfeye() +
+  geom_boxplot(width = 0.4) +
   scale_colour_manual(values = col.m) +
   scale_fill_manual(values = col.m.pastel) +
   theme_bw() +
@@ -766,4 +1202,5 @@ plot_power <- p_powera + p_powerb + p_powerc +
   plot_annotation(title = "", theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 ggsave(filename = "results/figures/Figure_power.pdf", width = 5, height = 11)
+ggsave(filename = "results/figures/Figure_power.png", width = 5, height = 11)
 
