@@ -3242,8 +3242,9 @@ window.Quarto = {
   </ul></li>
   <li><a href="#useful-notes-and-links" id="toc-useful-notes-and-links" class="nav-link" data-scroll-target="#useful-notes-and-links"><span class="header-section-number">3</span> Useful notes and links</a>
   <ul class="collapse">
-  <li><a href="#changing-optimization-method-in-glmmtmb" id="toc-changing-optimization-method-in-glmmtmb" class="nav-link" data-scroll-target="#changing-optimization-method-in-glmmtmb">Changing optimization method in <code>glmmTMB</code></a></li>
-  <li><a href="#covariance-structures-in-glmmtmb" id="toc-covariance-structures-in-glmmtmb" class="nav-link" data-scroll-target="#covariance-structures-in-glmmtmb">Covariance structures in <code>glmmTMB</code></a></li>
+  <li><a href="#robust-variance-estimation" id="toc-robust-variance-estimation" class="nav-link" data-scroll-target="#robust-variance-estimation">Robust variance estimation</a></li>
+  <li><a href="#changing-optimization-method" id="toc-changing-optimization-method" class="nav-link" data-scroll-target="#changing-optimization-method">Changing optimization method</a></li>
+  <li><a href="#other-covariance-structures" id="toc-other-covariance-structures" class="nav-link" data-scroll-target="#other-covariance-structures">Other covariance structures</a></li>
   </ul></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">4</span> References</a></li>
   <li><a href="#session-info" id="toc-session-info" class="nav-link" data-scroll-target="#session-info"><span class="header-section-number">5</span> Session info</a></li>
@@ -3284,7 +3285,7 @@ window.Quarto = {
 <section id="contact" class="level3">
 <h3 class="anchored" data-anchor-id="contact">Contact</h3>
 <p>For any questions or to raise an error, please contact Coralie Williams: <a href="mailto:coralie.williams@unsw.edu.au">coralie.williams@unsw.edu.au</a></p>
-<p>Last updated: 04 April 2026</p>
+<p>Last updated: 11 June 2026</p>
 </section>
 <section id="introduction" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
@@ -4267,16 +4268,21 @@ attr(,&quot;ddf&quot;)
 </section>
 <section id="useful-notes-and-links" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Useful notes and links</h1>
-<section id="changing-optimization-method-in-glmmtmb" class="level2 unnumbered">
-<h2 class="unnumbered anchored" data-anchor-id="changing-optimization-method-in-glmmtmb">Changing optimization method in <code>glmmTMB</code></h2>
+<section id="robust-variance-estimation" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="robust-variance-estimation">Robust variance estimation</h2>
+<p><code>vcov</code> is a function in <code>glmmTMB</code> that allows you to compute robust (sandwich) variance-covariance matrices for the fixed effects estimates. This can be particularly useful when there is concern about model misspecification or when the data exhibit heteroscedasticity or clustering that is not fully accounted for by the random effects structure.</p>
+<p>More information is provided here: <a href="https://cran.r-project.org/web/packages/glmmTMB/vignettes/model_evaluation.pdf">Post-model-fitting procedures with glmmTMB</a></p>
+</section>
+<section id="changing-optimization-method" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="changing-optimization-method">Changing optimization method</h2>
 <p>In some cases, the default optimization method may not converge or can yield warning messages. In such cases, you can try alternative optimization methods by modifying the <code>control = glmmTMBControl()</code> argument. By default, <code>glmmTMB</code> uses the <code>nlminb</code> non-linear optimizer for parameter estimation.</p>
 <p>Further information on optimization methods and troubleshooting convergence and warning messages can be found in the <code>glmmTMB</code> documentation:</p>
 <ul>
 <li><a href="https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html">Troubleshooting with glmmTMB</a></li>
 </ul>
 </section>
-<section id="covariance-structures-in-glmmtmb" class="level2 unnumbered">
-<h2 class="unnumbered anchored" data-anchor-id="covariance-structures-in-glmmtmb">Covariance structures in <code>glmmTMB</code></h2>
+<section id="other-covariance-structures" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="other-covariance-structures">Other covariance structures</h2>
 <p>The <code>glmmTMB</code> package offers a variety of covariance structures that can be used to model different types of dependencies in the data. A list of available covariance structures and their applications can be found in the package documentation:</p>
 <ul>
 <li><a href="https://cran.r-project.org/web/packages/glmmTMB/vignettes/covstruct.html">Covariance structures with glmmTMB</a></li>
@@ -4314,14 +4320,14 @@ attr(,&quot;ddf&quot;)
 <span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>─ Session info ───────────────────────────────────────────────────────────────</span>
 <span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a> setting  value</span>
 <span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a> version  R version <span class="dv">4</span>.<span class="fl">5.2</span> (<span class="dv">2025-10-31</span> ucrt)</span>
-<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a> os       Windows <span class="dv">11</span> <span class="fu">x64</span> (build <span class="dv">26100</span>)</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a> os       Windows <span class="dv">11</span> <span class="fu">x64</span> (build <span class="dv">26200</span>)</span>
 <span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a> system   x86_64, mingw32</span>
 <span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a> ui       RTerm</span>
 <span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a> <span class="fu">language</span> (EN)</span>
 <span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a> collate  English_Australia.utf8</span>
 <span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a> ctype    English_Australia.utf8</span>
 <span id="cb54-11"><a href="#cb54-11" aria-hidden="true" tabindex="-1"></a> tz       Australia<span class="sc">/</span>Sydney</span>
-<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2026-04-04</span></span>
+<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a> date     <span class="dv">2026-06-11</span></span>
 <span id="cb54-13"><a href="#cb54-13" aria-hidden="true" tabindex="-1"></a> pandoc   <span class="dv">3</span>.<span class="fl">6.3</span> <span class="sc">@</span> C<span class="sc">:</span><span class="er">/</span>Program Files<span class="sc">/</span>RStudio<span class="sc">/</span>resources<span class="sc">/</span>app<span class="sc">/</span>bin<span class="sc">/</span>quarto<span class="sc">/</span>bin<span class="sc">/</span>tools<span class="sc">/</span> (via rmarkdown)</span>
 <span id="cb54-14"><a href="#cb54-14" aria-hidden="true" tabindex="-1"></a> quarto   <span class="cn">NA</span> <span class="sc">@</span> C<span class="sc">:</span>\\Users\\z5394590\\AppData\\Local\\Programs\\Quarto\\bin\\quarto.exe</span>
 <span id="cb54-15"><a href="#cb54-15" aria-hidden="true" tabindex="-1"></a></span>
@@ -4387,7 +4393,7 @@ attr(,&quot;ddf&quot;)
 <span id="cb54-75"><a href="#cb54-75" aria-hidden="true" tabindex="-1"></a> reformulas     <span class="dv">0</span>.<span class="fl">4.4</span>      <span class="dv">2026-02-02</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-76"><a href="#cb54-76" aria-hidden="true" tabindex="-1"></a> rentrez        <span class="dv">1</span>.<span class="fl">2.4</span>      <span class="dv">2025-06-11</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-77"><a href="#cb54-77" aria-hidden="true" tabindex="-1"></a> rlang          <span class="dv">1</span>.<span class="fl">1.7</span>      <span class="dv">2026-01-09</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
-<span id="cb54-78"><a href="#cb54-78" aria-hidden="true" tabindex="-1"></a> rmarkdown      <span class="fl">2.30</span>       <span class="dv">2025-09-28</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
+<span id="cb54-78"><a href="#cb54-78" aria-hidden="true" tabindex="-1"></a> rmarkdown      <span class="fl">2.31</span>       <span class="dv">2026-03-26</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.3</span>)</span>
 <span id="cb54-79"><a href="#cb54-79" aria-hidden="true" tabindex="-1"></a> rncl           <span class="dv">0</span>.<span class="fl">8.9</span>      <span class="dv">2026-01-21</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-80"><a href="#cb54-80" aria-hidden="true" tabindex="-1"></a> rotl         <span class="sc">*</span> <span class="dv">3</span>.<span class="fl">1.1</span>      <span class="dv">2026-01-15</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-81"><a href="#cb54-81" aria-hidden="true" tabindex="-1"></a> rstudioapi     <span class="dv">0</span>.<span class="fl">18.0</span>     <span class="dv">2026-01-16</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
@@ -4409,9 +4415,9 @@ attr(,&quot;ddf&quot;)
 <span id="cb54-97"><a href="#cb54-97" aria-hidden="true" tabindex="-1"></a> viridisLite    <span class="dv">0</span>.<span class="fl">4.3</span>      <span class="dv">2026-02-04</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-98"><a href="#cb54-98" aria-hidden="true" tabindex="-1"></a> vroom          <span class="dv">1</span>.<span class="fl">7.0</span>      <span class="dv">2026-01-27</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-99"><a href="#cb54-99" aria-hidden="true" tabindex="-1"></a> withr          <span class="dv">3</span>.<span class="fl">0.2</span>      <span class="dv">2024-10-28</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
-<span id="cb54-100"><a href="#cb54-100" aria-hidden="true" tabindex="-1"></a> xfun           <span class="fl">0.55</span>       <span class="dv">2025-12-16</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
+<span id="cb54-100"><a href="#cb54-100" aria-hidden="true" tabindex="-1"></a> xfun           <span class="fl">0.57</span>       <span class="dv">2026-03-20</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.3</span>)</span>
 <span id="cb54-101"><a href="#cb54-101" aria-hidden="true" tabindex="-1"></a> XML            <span class="fl">3.99-0.20</span>  <span class="dv">2025-11-08</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
-<span id="cb54-102"><a href="#cb54-102" aria-hidden="true" tabindex="-1"></a> xml2           <span class="dv">1</span>.<span class="fl">5.1</span>      <span class="dv">2025-12-01</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
+<span id="cb54-102"><a href="#cb54-102" aria-hidden="true" tabindex="-1"></a> xml2           <span class="dv">1</span>.<span class="fl">5.2</span>      <span class="dv">2026-01-17</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.3</span>)</span>
 <span id="cb54-103"><a href="#cb54-103" aria-hidden="true" tabindex="-1"></a> xtable         <span class="fl">1.8</span><span class="dv">-4</span>      <span class="dv">2019-04-21</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-104"><a href="#cb54-104" aria-hidden="true" tabindex="-1"></a> yaml           <span class="dv">2</span>.<span class="fl">3.12</span>     <span class="dv">2025-12-10</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
 <span id="cb54-105"><a href="#cb54-105" aria-hidden="true" tabindex="-1"></a> zoo            <span class="fl">1.8</span><span class="dv">-15</span>     <span class="dv">2025-12-15</span> [<span class="dv">1</span>] <span class="fu">CRAN</span> (R <span class="dv">4</span>.<span class="fl">5.2</span>)</span>
@@ -5706,58 +5712,64 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb55-869"><a href="#cb55-869" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb55-870"><a href="#cb55-870" aria-hidden="true" tabindex="-1"></a><span class="fu"># Useful notes and links</span></span>
 <span id="cb55-871"><a href="#cb55-871" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-872"><a href="#cb55-872" aria-hidden="true" tabindex="-1"></a><span class="fu">## Changing optimization method in `glmmTMB` {.unnumbered}</span></span>
+<span id="cb55-872"><a href="#cb55-872" aria-hidden="true" tabindex="-1"></a><span class="fu">## Robust variance estimation {.unnumbered}</span></span>
 <span id="cb55-873"><a href="#cb55-873" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-874"><a href="#cb55-874" aria-hidden="true" tabindex="-1"></a>In some cases, the default optimization method may not converge or can yield warning messages. In such cases, you can try alternative optimization methods by modifying the <span class="in">`control = glmmTMBControl()`</span> argument. By default, <span class="in">`glmmTMB`</span> uses the <span class="in">`nlminb`</span> non-linear optimizer for parameter estimation. </span>
+<span id="cb55-874"><a href="#cb55-874" aria-hidden="true" tabindex="-1"></a><span class="in">`vcov`</span> is a function in <span class="in">`glmmTMB`</span> that allows you to compute robust (sandwich) variance-covariance matrices for the fixed effects estimates. This can be particularly useful when there is concern about model misspecification or when the data exhibit heteroscedasticity or clustering that is not fully accounted for by the random effects structure.</span>
 <span id="cb55-875"><a href="#cb55-875" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-876"><a href="#cb55-876" aria-hidden="true" tabindex="-1"></a>Further information on optimization methods and troubleshooting convergence and warning messages can be found in the <span class="in">`glmmTMB`</span> documentation:</span>
+<span id="cb55-876"><a href="#cb55-876" aria-hidden="true" tabindex="-1"></a>More information is provided here: <span class="co">[</span><span class="ot">Post-model-fitting procedures with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/model_evaluation.pdf)</span></span>
 <span id="cb55-877"><a href="#cb55-877" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-878"><a href="#cb55-878" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Troubleshooting with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)</span></span>
+<span id="cb55-878"><a href="#cb55-878" aria-hidden="true" tabindex="-1"></a><span class="fu">## Changing optimization method {.unnumbered}</span></span>
 <span id="cb55-879"><a href="#cb55-879" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-880"><a href="#cb55-880" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-881"><a href="#cb55-881" aria-hidden="true" tabindex="-1"></a><span class="fu">## Covariance structures in `glmmTMB` {.unnumbered}</span></span>
-<span id="cb55-882"><a href="#cb55-882" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-883"><a href="#cb55-883" aria-hidden="true" tabindex="-1"></a>The <span class="in">`glmmTMB`</span> package offers a variety of covariance structures that can be used to model different types of dependencies in the data. A list of available covariance structures and their applications can be found in the package documentation:</span>
-<span id="cb55-884"><a href="#cb55-884" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-885"><a href="#cb55-885" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Covariance structures with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/covstruct.html)</span></span>
+<span id="cb55-880"><a href="#cb55-880" aria-hidden="true" tabindex="-1"></a>In some cases, the default optimization method may not converge or can yield warning messages. In such cases, you can try alternative optimization methods by modifying the <span class="in">`control = glmmTMBControl()`</span> argument. By default, <span class="in">`glmmTMB`</span> uses the <span class="in">`nlminb`</span> non-linear optimizer for parameter estimation. </span>
+<span id="cb55-881"><a href="#cb55-881" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-882"><a href="#cb55-882" aria-hidden="true" tabindex="-1"></a>Further information on optimization methods and troubleshooting convergence and warning messages can be found in the <span class="in">`glmmTMB`</span> documentation:</span>
+<span id="cb55-883"><a href="#cb55-883" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-884"><a href="#cb55-884" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Troubleshooting with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)</span></span>
+<span id="cb55-885"><a href="#cb55-885" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb55-886"><a href="#cb55-886" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-887"><a href="#cb55-887" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-887"><a href="#cb55-887" aria-hidden="true" tabindex="-1"></a><span class="fu">## Other covariance structures {.unnumbered}</span></span>
 <span id="cb55-888"><a href="#cb55-888" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-889"><a href="#cb55-889" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span>
+<span id="cb55-889"><a href="#cb55-889" aria-hidden="true" tabindex="-1"></a>The <span class="in">`glmmTMB`</span> package offers a variety of covariance structures that can be used to model different types of dependencies in the data. A list of available covariance structures and their applications can be found in the package documentation:</span>
 <span id="cb55-890"><a href="#cb55-890" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-891"><a href="#cb55-891" aria-hidden="true" tabindex="-1"></a>Bangert-Drowns, R. L., Hurley, M. M., &amp; Wilkinson, B. (2004). _The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis_. Review of Educational Research, 74, 29-58.</span>
+<span id="cb55-891"><a href="#cb55-891" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span><span class="co">[</span><span class="ot">Covariance structures with glmmTMB</span><span class="co">](https://cran.r-project.org/web/packages/glmmTMB/vignettes/covstruct.html)</span></span>
 <span id="cb55-892"><a href="#cb55-892" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-893"><a href="#cb55-893" aria-hidden="true" tabindex="-1"></a>Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M., &amp; Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. R Journal, 9(2), 378–400. <span class="ot">&lt;https://doi.org/10.32614/RJ-2017-066&gt;</span></span>
+<span id="cb55-893"><a href="#cb55-893" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb55-894"><a href="#cb55-894" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-895"><a href="#cb55-895" aria-hidden="true" tabindex="-1"></a>Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). _Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature_. Journal of the American Medical Association, 271(9), 698–702. <span class="ot">&lt;https://doi.org/10.1001/jama.1994.03510330076038&gt;</span></span>
+<span id="cb55-895"><a href="#cb55-895" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span>
 <span id="cb55-896"><a href="#cb55-896" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-897"><a href="#cb55-897" aria-hidden="true" tabindex="-1"></a>Felix, J. A., Stevenson, P. C., &amp; Koricheva, J. (2023). _Plant neighbourhood diversity effects on leaf traits: A meta-analysis_. Functional Ecology, 37(12), 3150–3163. <span class="ot">&lt;https://doi.org/10.1111/1365-2435.14441&gt;</span></span>
+<span id="cb55-897"><a href="#cb55-897" aria-hidden="true" tabindex="-1"></a>Bangert-Drowns, R. L., Hurley, M. M., &amp; Wilkinson, B. (2004). _The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis_. Review of Educational Research, 74, 29-58.</span>
 <span id="cb55-898"><a href="#cb55-898" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-899"><a href="#cb55-899" aria-hidden="true" tabindex="-1"></a>Viechtbauer, W. (2010). _Conducting meta-analyses in R with the metafor package_. Journal of Statistical Software, 36(3), 1–48. <span class="ot">&lt;https://doi.org/10.18637/jss.v036.i03&gt;</span></span>
+<span id="cb55-899"><a href="#cb55-899" aria-hidden="true" tabindex="-1"></a>Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M., &amp; Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. R Journal, 9(2), 378–400. <span class="ot">&lt;https://doi.org/10.32614/RJ-2017-066&gt;</span></span>
 <span id="cb55-900"><a href="#cb55-900" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-901"><a href="#cb55-901" aria-hidden="true" tabindex="-1"></a>Viechtbauer,W.,&amp;López-López, J.A. (2022). _Location-scale models for meta-analysis_. Research Synthesis Methods, 13(6), 697–715. <span class="ot">&lt;https://doi.org/10.1002/jrsm.1562&gt;</span></span>
+<span id="cb55-901"><a href="#cb55-901" aria-hidden="true" tabindex="-1"></a>Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). _Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature_. Journal of the American Medical Association, 271(9), 698–702. <span class="ot">&lt;https://doi.org/10.1001/jama.1994.03510330076038&gt;</span></span>
 <span id="cb55-902"><a href="#cb55-902" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-903"><a href="#cb55-903" aria-hidden="true" tabindex="-1"></a>White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <span class="ot">&lt;https://CRAN.R-project.org/package=metadat&gt;</span>.</span>
+<span id="cb55-903"><a href="#cb55-903" aria-hidden="true" tabindex="-1"></a>Felix, J. A., Stevenson, P. C., &amp; Koricheva, J. (2023). _Plant neighbourhood diversity effects on leaf traits: A meta-analysis_. Functional Ecology, 37(12), 3150–3163. <span class="ot">&lt;https://doi.org/10.1111/1365-2435.14441&gt;</span></span>
 <span id="cb55-904"><a href="#cb55-904" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-905"><a href="#cb55-905" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session info</span></span>
+<span id="cb55-905"><a href="#cb55-905" aria-hidden="true" tabindex="-1"></a>Viechtbauer, W. (2010). _Conducting meta-analyses in R with the metafor package_. Journal of Statistical Software, 36(3), 1–48. <span class="ot">&lt;https://doi.org/10.18637/jss.v036.i03&gt;</span></span>
 <span id="cb55-906"><a href="#cb55-906" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-909"><a href="#cb55-909" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb55-910"><a href="#cb55-910" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: Reproducibility-SessionInfo-R-environment </span></span>
-<span id="cb55-911"><a href="#cb55-911" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-align: &quot;center&quot; </span></span>
-<span id="cb55-912"><a href="#cb55-912" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: &#39;100%&#39; </span></span>
-<span id="cb55-913"><a href="#cb55-913" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: asis </span></span>
-<span id="cb55-914"><a href="#cb55-914" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false </span></span>
-<span id="cb55-915"><a href="#cb55-915" aria-hidden="true" tabindex="-1"></a><span class="co">#| warnings: false </span></span>
-<span id="cb55-916"><a href="#cb55-916" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-917"><a href="#cb55-917" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sessioninfo) </span>
-<span id="cb55-918"><a href="#cb55-918" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(details) </span>
-<span id="cb55-919"><a href="#cb55-919" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-920"><a href="#cb55-920" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-921"><a href="#cb55-921" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressWarnings</span>(</span>
-<span id="cb55-922"><a href="#cb55-922" aria-hidden="true" tabindex="-1"></a>  details<span class="sc">::</span><span class="fu">details</span>(<span class="fu">session_info</span>(), <span class="at">summary =</span> <span class="st">&#39;Current session info&#39;</span>, <span class="at">open =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb55-923"><a href="#cb55-923" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb55-924"><a href="#cb55-924" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-925"><a href="#cb55-925" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb55-907"><a href="#cb55-907" aria-hidden="true" tabindex="-1"></a>Viechtbauer,W.,&amp;López-López, J.A. (2022). _Location-scale models for meta-analysis_. Research Synthesis Methods, 13(6), 697–715. <span class="ot">&lt;https://doi.org/10.1002/jrsm.1562&gt;</span></span>
+<span id="cb55-908"><a href="#cb55-908" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-909"><a href="#cb55-909" aria-hidden="true" tabindex="-1"></a>White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <span class="ot">&lt;https://CRAN.R-project.org/package=metadat&gt;</span>.</span>
+<span id="cb55-910"><a href="#cb55-910" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-911"><a href="#cb55-911" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session info</span></span>
+<span id="cb55-912"><a href="#cb55-912" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-915"><a href="#cb55-915" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb55-916"><a href="#cb55-916" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: Reproducibility-SessionInfo-R-environment </span></span>
+<span id="cb55-917"><a href="#cb55-917" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-align: &quot;center&quot; </span></span>
+<span id="cb55-918"><a href="#cb55-918" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: &#39;100%&#39; </span></span>
+<span id="cb55-919"><a href="#cb55-919" aria-hidden="true" tabindex="-1"></a><span class="co">#| results: asis </span></span>
+<span id="cb55-920"><a href="#cb55-920" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false </span></span>
+<span id="cb55-921"><a href="#cb55-921" aria-hidden="true" tabindex="-1"></a><span class="co">#| warnings: false </span></span>
+<span id="cb55-922"><a href="#cb55-922" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-923"><a href="#cb55-923" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sessioninfo) </span>
+<span id="cb55-924"><a href="#cb55-924" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(details) </span>
+<span id="cb55-925"><a href="#cb55-925" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-926"><a href="#cb55-926" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-927"><a href="#cb55-927" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressWarnings</span>(</span>
+<span id="cb55-928"><a href="#cb55-928" aria-hidden="true" tabindex="-1"></a>  details<span class="sc">::</span><span class="fu">details</span>(<span class="fu">session_info</span>(), <span class="at">summary =</span> <span class="st">&#39;Current session info&#39;</span>, <span class="at">open =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb55-929"><a href="#cb55-929" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb55-930"><a href="#cb55-930" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-931"><a href="#cb55-931" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

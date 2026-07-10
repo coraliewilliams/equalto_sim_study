@@ -54,6 +54,7 @@ $\text{VCV}$ represents a block-diagonal variance-covariance matrix including kn
   library(kableExtra)
   library(metafor)
   library(glmmTMB)
+  library(tidyverse)
 ```
 
 Check if the `equalto` covariance structure is available (it should be in position 15 of this output) :
@@ -316,11 +317,13 @@ fef.t
 
 To illustrate how to fit meta-analyses with `glmmTMB`, we re-analyse three published datasets from distinct research domains:
 
-- **Medicine** — vaccine effectiveness.
-- **Ecology & evolution** — plant diversity effects.
-- **Social sciences** — school-based learning programs.
+- **Medicine** — vaccine effectiveness: bivariate and network meta-analysis.
+- **Ecology & evolution** — plant diversity effects: phylogenetic meta-analysis.
+- **Social sciences** — school-based learning programs: location-scale meta-analysis. 
 
-Across these case studies, we show model specification, output, and interpretation using `glmmTMB`.
+Across these case studies, we show model specification, output, and interpretation using `glmmTMB`. 
+
+For comparison, we also fit the same models with the `metafor` package and show that the results are identical across packages.
 
 
 ## Bivariate meta-analysis
@@ -329,14 +332,14 @@ Meta-analysis is widely used in medicine to combine evidence across clinical tri
 
 We will use the Colditz et al. (1994) dataset that is directly avaiable in `metafor` via the `metadat` R package. This published meta-analysis assessed the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine against tuberculosis across 13 studies. We will fit a bivariate meta-analysis that treats the two vaccination groups as separate outcomes, and estimates, for each group, the overall mean effect and among-study variance, as well as the correlation of study-level effects between groups (i.e., how strongly they co-vary).
 
-```{r}
+```{r data_colditz}
 dat <- dat.colditz1994
 ```
 
 Reshape to long format so that each arm has its own row (“v” = vaccinated, “c” = unvaccinated/control), and setting control as the reference group.
 
-```{r}
-dat_long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+```{r data_long_colditz}
+dat_long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat)
 levels(dat_long$group) <- c("c", "v")
 dat_long$group <- relevel(dat_long$group, ref="c")
 ```
@@ -345,6 +348,12 @@ We compute the logit-transformed event proportion (`PLO`) as the effect-size mea
 
 ```{r}
 dat_long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat_long)
+dat_long$obs <- as.factor(1:nrow(dat_long))
+dat_long$g <- 1 #dummy variable
+head(dat_long)
+
+##### testing
+dat_long <- escaFlc(measure="OR", xi=out1, mi=out2, data=dat_long)
 dat_long$obs <- as.factor(1:nrow(dat_long))
 dat_long$g <- 1 #dummy variable
 head(dat_long)
@@ -359,7 +368,7 @@ VCV[1:5,1:5] #show first five measures of VCV matrix
 
 To fit a bivariate meta-analysis with `glmmTMB` using `equalto` supply the sampling-error variance–covariance matrix (here it is called `VCV`), and fix the dispersion at zero (`dispformula = ~ 0`) since we don't want to model any within-study variance effect. 
 
-```{r}
+```{r biv_glmmTMB}
 bv_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
                        dispformula = ~ 0,
                        REML = TRUE,
@@ -400,29 +409,13 @@ bv_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
 # ---
 # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 # 
-# 
-# 
-emmeans::emmeans(bv_fit, ~ group) |> 
-  summary(infer=TRUE, type="response")
+
+
+
+# # We can also get the  estimated marginal means
+# emmeans::emmeans(bv_fit, ~ group) |> 
+#   summary(infer=TRUE, type="response")
 ```
-
-
-
-
-
-
-
-```{r}
-#| output: false
-#| warnings: false
-#| eval: false
-# bivariate multilevel => compare with brms
-bv_ml_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
-                       dispformula = ~ (0 + group|study),
-                       REML = TRUE,
-                       data=dat_long)
-```
-
 
 
 To obtain the variance component estimates and corresponding correlation $\rho$ (i.e. `rho`) for each group we use the `VarCorr` function:
@@ -437,10 +430,10 @@ rho.tmb <- vc$cond$study["groupc", "groupv"] / sqrt(var_con * var_exp)
 Then we can extract the model results as follows: 
 
 ```{r}
-bv_out <- data.frame(est.b0 = as.numeric(unlist(fixef(bv_fit))[[1]]), 
-                     se.b0 = as.numeric(sqrt(vcov(bv_fit)[[1]]))[1], 
-                     est.b1 = as.numeric(unlist(fixef(bv_fit))[[2]]), 
-                     se.b1 = as.numeric(sqrt(vcov(bv_fit)[[1]]))[4], 
+bv_out <- data.frame(est.b0 = as.numeric(coef(summary(bv_fit))$cond[,"Estimate"][1]), 
+                     se.b0 = as.numeric(coef(summary(bv_fit))$cond[,"Std. Error"][1]), 
+                     est.b1 = as.numeric(coef(summary(bv_fit))$cond[,"Estimate"][2]), 
+                     se.b1 = as.numeric(coef(summary(bv_fit))$cond[,"Std. Error"][2]), 
                      tau2_1 = var_con, #study-level heterogeneity for group=control
                      tau2_2 = var_exp, #study-level heterogeneity for group=exp
                      rho = rho.tmb)
@@ -449,14 +442,50 @@ bv_out
 ```
 
 
-
 This is equivalent to the following model in `metafor`:
 
-```{r}
+```{r biv_rma.mv}
 bv_fit_rma <- rma.mv(yi, vi, mods = ~ group, 
                      random = ~ group | study, 
                      struct = "UN",
                      data=dat_long)
+
+# summary(bv_fit_rma)
+# 
+# Multivariate Meta-Analysis Model (k = 26; method: REML)
+# 
+#   logLik  Deviance       AIC       BIC      AICc   
+# -31.5017   63.0033   73.0033   78.8936   76.3367   
+# 
+# Variance Components:
+# 
+# outer factor: study (nlvls = 13)
+# inner factor: group (nlvls = 2)
+# 
+#             estim    sqrt  k.lvl  fixed  level 
+# tau^2.1    2.6173  1.6178     13     no      c 
+# tau^2.2    1.5486  1.2444     13     no      v 
+# 
+#     rho.c  rho.v     c   v 
+# c       1            -  13 
+# v  0.9450      1    no   - 
+# 
+# Test for Residual Heterogeneity:
+# QE(df = 24) = 5270.3863, p-val < .0001
+# 
+# Test of Moderators (coefficient 2):
+# QM(df = 1) = 15.5470, p-val < .0001
+# 
+# Model Results:
+# 
+#          estimate      se     zval    pval    ci.lb    ci.ub      
+# intrcpt   -4.0960  0.4529  -9.0432  <.0001  -4.9837  -3.2082  *** 
+# groupv    -0.7414  0.1880  -3.9430  <.0001  -1.1099  -0.3729  *** 
+# 
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
 ```
 
 We can extract the model results as follows:
@@ -473,6 +502,126 @@ bv_out_rma
 ```
 
 
+We can also fit the GLMM specification of the same bivariate model by taking the joint distribution of the probability of an event in the treatment and control groups of each study. This model is sometimes called the “Van Houwelingen bivariate” model
+
+
+```{r}
+dat_long <- dat_long |>
+  mutate(vacc = as.integer(group == "v"),
+    cont = as.integer(group == "c"))
+  
+```
+
+Now fit the model with glmmTMB function:
+
+```{r}
+bv_joint_fit <- glmmTMB(cbind(out1,out2) ~ factor(vacc) + (cont+vacc-1|study), 
+                        family = binomial(link = "logit"), 
+                        data=dat_long)
+
+
+# > summary(bv_joint_fit)
+# 
+#  Family: binomial  ( logit )
+# Formula:          cbind(out1, out2) ~ factor(vacc) + (cont + vacc - 1 | study)
+# Data: dat_long
+# 
+#       AIC       BIC    logLik -2*log(L)  df.resid 
+#     257.4     263.7    -123.7     247.4        21 
+# 
+# Random effects:
+# 
+# Conditional model:
+#  Groups Name Variance Std.Dev. Corr 
+#  study  cont 2.438    1.561         
+#         vacc 1.436    1.198    0.95 
+# Number of obs: 26, groups:  study, 13
+# 
+# Conditional model:
+#               Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)    -4.1234     0.4374  -9.427  < 2e-16 ***
+# factor(vacc)1  -0.7417     0.1834  -4.043 5.27e-05 ***
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+```
+
+
+
+```{r}
+vc <- VarCorr(bv_joint_fit)
+var_cont <- vc$cond$study["cont", "vacc"]
+var_vacc <- vc$cond$study["vacc", "vacc"]
+rho.tmb <- vc$cond$study["cont", "vacc"] / sqrt(var_cont * var_vacc)
+
+
+bv_joint_out <- data.frame(est.b0 = as.numeric(coef(summary(bv_joint_fit))$cond[,"Estimate"][1]), 
+                     se.b0 = as.numeric(coef(summary(bv_joint_fit))$cond[,"Std. Error"][1]), 
+                     est.b1 = as.numeric(coef(summary(bv_joint_fit))$cond[,"Estimate"][2]), 
+                     se.b1 = as.numeric(coef(summary(bv_joint_fit))$cond[,"Std. Error"][2]), 
+                     tau2_1 = var_cont, #study-level heterogeneity for group=control
+                     tau2_2 = var_vacc, #study-level heterogeneity for group=vaccine
+                     rho = rho.tmb)
+
+bv_joint_out
+```
+
+## Network meta-analysis (NMA)
+
+
+
+
+```{r}
+dat <- metadat::dat.hasselblad1998
+```
+
+
+
+```{r}
+### create network graph ('igraph' package must be installed)
+library(igraph, warn.conflicts=FALSE)
+pairs <- data.frame(do.call(rbind,
+   sapply(split(dat$trt, dat$study), function(x) t(combn(x,2)))), stringsAsFactors=FALSE)
+lvls <- c("no_contact", "self_help", "ind_counseling", "grp_counseling")
+pairs$X1 <- factor(pairs$X1, levels=lvls)
+pairs$X2 <- factor(pairs$X2, levels=lvls)
+tab <- table(pairs[,1], pairs[,2])
+tab # adjacency matrix
+g <- graph_from_adjacency_matrix(tab, mode = "plus", weighted=TRUE, diag=FALSE)
+vertex_attr(g, "name") <- c("No Contact", "Self-Help",
+                            "Individual\nCounseling", "Group\nCounseling")
+plot(g, edge.curved=FALSE, edge.width=E(g)$weight, layout=layout_on_grid,
+     vertex.size=45, vertex.color="lightgray", vertex.label.color="black", vertex.label.font=2)
+
+```
+
+
+```{r}
+### calculate log odds for each study arm
+dat <- escalc(measure="PLO", xi=xi, ni=ni, add=1/2, to="all", data=dat)
+dat
+
+### convert trt variable to factor with desired ordering of levels
+dat$trt <- factor(dat$trt, levels=c("no_contact", "self_help", "ind_counseling", "grp_counseling"))
+
+### add a space before each level (this makes the output a bit more legible)
+levels(dat$trt) <- paste0(" ", levels(dat$trt))
+```
+
+
+```{r}
+res <- rma.mv(yi, vi, mods = ~ 0 + factor(study) + trt,
+              random = ~ trt | study, rho=1/2, data=dat, btt="trt")
+res
+```
+
+
+
+```{r}
+nma_fit <- glmmTMB(cbind(out1,out2) ~ factor(study) + (cont+vacc-1|study), 
+                   family = binomial(link = "logit"), 
+                   data=dat_long)
+
+```
 
 
 ## Phylogenetic meta-analysis
@@ -700,6 +849,7 @@ runtime_df
 Some notes about speeding up model fitting with `metafor`: [https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting](https://www.metafor-project.org/doku.php/tips:speeding_up_model_fitting)
 
 
+
 ## Location-scale meta-analysis
 
 In a standard random-effects meta-analysis, the between-study variance $\tau^2$ is assumed constant across studies. This is often unrealistic. **Location–scale models** relax this assumption by modelling both the *location* (the mean effect) and the *scale* (the amount of heterogeneity) as functions of study-level moderators. In practice, you can include different predictors in the mean and variance parts to test whether heterogeneity varies with study features (e.g., outcome type, design) or differs across subgroups. This yields a more flexible meta-analytic model that can explain, not just accommodate, between-study variability.
@@ -804,7 +954,13 @@ By default `metafor` uses the variance for the scale, whereas `glmmTMB` uses the
 
 # Useful notes and links
 
-## Changing optimization method in `glmmTMB` {.unnumbered}
+## Robust variance estimation {.unnumbered}
+
+`vcov` is a function in `glmmTMB` that allows you to compute robust (sandwich) variance-covariance matrices for the fixed effects estimates. This can be particularly useful when there is concern about model misspecification or when the data exhibit heteroscedasticity or clustering that is not fully accounted for by the random effects structure.
+
+More information is provided here: [Post-model-fitting procedures with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/model_evaluation.pdf)
+
+## Changing optimization method {.unnumbered}
 
 In some cases, the default optimization method may not converge or can yield warning messages. In such cases, you can try alternative optimization methods by modifying the `control = glmmTMBControl()` argument. By default, `glmmTMB` uses the `nlminb` non-linear optimizer for parameter estimation. 
 
@@ -813,7 +969,7 @@ Further information on optimization methods and troubleshooting convergence and 
 -   [Troubleshooting with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
 
 
-## Covariance structures in `glmmTMB` {.unnumbered}
+## Other covariance structures {.unnumbered}
 
 The `glmmTMB` package offers a variety of covariance structures that can be used to model different types of dependencies in the data. A list of available covariance structures and their applications can be found in the package documentation:
 
