@@ -9,3 +9,12 @@ readr
 rotl
 ape
 dplyr
+tidyverse
+ggplot2
+tibble
+tidyr
+purrr
+stringr
+forcats
+lubridate
+igraph
