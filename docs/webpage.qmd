@@ -722,7 +722,16 @@ The likelihood ratio test weakly favours the compound-symmetry model (χ²₁ = 
 
 
 ```{r}
-exp(confint(nma_cs_fit, parm="beta_", method = "profile"))
+est <- exp(coef(summary(nma_cs_fit))$cond[,1])
+ci_prof <- exp(confint(nma_cs_fit, parm="beta_", method = "profile"))
+
+results_nma <- data.frame(
+  Estimate = est,
+  Lower_CI = ci_prof[, 1],
+  Upper_CI = ci_prof[, 2]
+)
+
+results_nma
 ```
 
 The above `confint()` call computes profile likelihood confidence intervals, which are based on the shape of the likelihood rather than the Wald (normal) approximation and are more reliable in moderate samples. 
@@ -1064,9 +1073,11 @@ By default `metafor` uses the variance for the scale, whereas `glmmTMB` uses the
 
 ## Robust variance estimation {.unnumbered}
 
-`vcov` is a function in `glmmTMB` that allows you to compute robust (sandwich) variance-covariance matrices for the fixed effects estimates. This can be particularly useful when there is concern about model misspecification or when the data exhibit heteroscedasticity or clustering that is not fully accounted for by the random effects structure.
+`vcovHC()` is a function in `glmmTMB` that computes robust (sandwich) variance-covariance matrices for the fixed effects estimates. This can be particularly useful when there is concern about model misspecification or when the data exhibit heteroscedasticity or clustering that is not fully accounted for by the random effects structure.
 
 More information is provided here: [Post-model-fitting procedures with glmmTMB](https://cran.r-project.org/web/packages/glmmTMB/vignettes/model_evaluation.pdf)
+
+Important note: currently `glmmTMB` doesn't support small sample adjustments (though it may be added in future developments).
 
 ## Changing optimization method {.unnumbered}
 
