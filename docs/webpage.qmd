@@ -1104,22 +1104,23 @@ Orchard plots are extensions of forest plots that display model estimates, confi
 ```{r}
 #| message: false     
 #| warning: false  
-#| eval: false
 
-## As of July 2026: you need to use the dev version 
-#devtools::install_github("daniel1noble/orchaRd", ref = "dev", force = TRUE)
+## As of July 2026: you need to use the following branch
+#detach("package:orchaRd", unload = TRUE)
+#remove.packages("orchaRd")
+#devtools::install_github("daniel1noble/orchaRd", ref = "glmmtmb-rma-adapter", force = TRUE)
+
 library(orchaRd)
-?tmb.res <- glmmTMB_to_rma(fit_phylo,
-               yi = "SMD",
-               vi = "SMD_vi",
-               data = ef,
-               measure = "GEN")
+tmb.res <- glmmTMB_to_rma(fit_phylo,
+               yi = "yi",
+               vi = "vi",
+               data = ef)
 
 
 tmb.Nfixing <- orchaRd::mod_results(
   tmb.res,
-  mod = "trait.type",
-  group = "Nfixing"
+  mod = "Nfixing",
+  group = "experiment"
 )
 
 orchaRd::orchard_plot(
