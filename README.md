@@ -105,10 +105,14 @@ https://coraliewilliams.github.io/equalto_sim_study/webpage.html
 
 ## Citation
 
+Repository DOI hosted on Zenodo: [https://doi.org/10.5281/zenodo.22742805](https://doi.org/10.5281/zenodo.22742805)
+
 This repository supports the associated manuscript:
 
 > Williams, C. et al. *Meta-analysis with the `glmmTMB` R package*.
 > Citation details and DOI will be added following publication.
+
+
 
 ## Contact
 
