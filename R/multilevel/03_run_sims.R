@@ -82,6 +82,7 @@ fit_rma_uni <- function(dat) {
 fit_glmmTMB_RE <- function(dat) {
   dat <- dat %>% mutate(g = 1L, id = factor(seq_len(n())))
   V <- diag(dat$vi)
+  dimnames(V) <- list(levels(dat$id), levels(dat$id))
   tf <- time_fit(glmmTMB(yi ~ 1 + equalto(0 + id | g, V), REML = TRUE, data = dat))
   if (inherits(tf$fit, "try-error")) return(NULL)
   m <- tf$fit

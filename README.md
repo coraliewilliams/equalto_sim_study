@@ -34,12 +34,13 @@ Results from `glmmTMB` are compared with equivalent models fitted using [`metafo
 
 Four effect-size measures are considered:
 
-| Effect-size measure          | Outcome type | Main models compared                                       |
-| ---------------------------- | ------------ | ---------------------------------------------------------- |
-| Standardised mean difference | Continuous   | `metafor::rma.uni()` and Gaussian `glmmTMB` with `equalto` |
-| Log response ratio           | Continuous   | `metafor::rma.uni()` and Gaussian `glmmTMB` with `equalto` |
-| Log odds ratio               | Binary       | Two-stage models and binomial GLMMs                        |
-| Log incidence rate ratio     | Count/rate   | Two-stage models and Poisson GLMMs                         |
+| Effect-size measure          | Outcome type |  Models compared                                             |
+| ---------------------------- | ------------ | ------------------------------------------------------------ |
+| Standardised mean difference | Continuous   | `metafor::rma.uni()` and Gaussian `glmmTMB()` with `equalto` |
+| Log response ratio           | Continuous   | `metafor::rma.uni()` and Gaussian `glmmTMB()` with `equalto` |
+| Log odds ratio               | Binary       | `metafor::rma.glmm()` and binomial `glmmTMB()`               |
+| Log incidence rate ratio     | Count/rate   | `metafor::rma.glmm()` and Poisson `glmmTMB()`                |
+
 
 The full design includes 20 studies per meta-analysis, null and moderate overall effects, three heterogeneity levels, moderate and rare event settings, and 1,000 repetitions per condition.
 

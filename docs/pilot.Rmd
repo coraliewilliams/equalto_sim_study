@@ -135,6 +135,7 @@ m.smd.rma <- rma(yi, vi, data=dat.smd, control=list(REMLf=FALSE))
 dat.smd$g <- 1
 dat.smd$id <- as.factor(1:nrow(dat.smd))
 V <- diag(dat.smd$vi, nrow = nrow(dat.smd))
+dimnames(V) <- list(levels(dat.smd$id), levels(dat.smd$id))
 m.smd.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
                     REML = TRUE,
                     data=dat.smd)
@@ -189,6 +190,7 @@ m.lnrr.rma <- rma(yi, vi, data=dat.lnrr)
 dat.lnrr$g <- 1
 dat.lnrr$id <- as.factor(1:nrow(dat.lnrr))
 V <- diag(dat.lnrr$vi, nrow = nrow(dat.lnrr))
+dimnames(V) <- list(levels(dat.lnrr$id), levels(dat.lnrr$id))
 m.lnrr.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
                     REML = TRUE,
                     data=dat.lnrr)
@@ -255,6 +257,7 @@ Fit model in glmmTMB:
 dat.or$g <- 1
 dat.or$id <- as.factor(1:nrow(dat.or))
 V <- diag(dat.or$vi, nrow = nrow(dat.or))
+dimnames(V) <- list(levels(dat.or$id), levels(dat.or$id))
 
 m.or.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
                     REML = TRUE,
@@ -413,6 +416,7 @@ m.irr.rma <- rma(yi, vi, data=dat.irr)
 dat.irr$g <- 1
 dat.irr$id <- as.factor(1:nrow(dat.irr))
 V <- diag(dat.irr$vi, nrow = nrow(dat.irr))
+dimnames(V) <- list(levels(dat.irr$id), levels(dat.irr$id))
 m.irr.tmb <- glmmTMB(yi ~ 1 + equalto(0 + id|g,V), ## the map variable "id" must be a factor
                     REML = TRUE,
                     data=dat.irr)
@@ -548,6 +552,7 @@ bv_rma <- rma.mv(yi, vi, mods = ~ group,
 
 # fit with glmmTMB
 VCV <- diag(dat_long$vi) #variance covariance matrix for sampling errors
+dimnames(VCV) <- list(levels(dat_long$obs), levels(dat_long$obs))
 bv_TMB <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
                   dispformula = ~ 0, #set residual variance to zero
                   REML = "TRUE",
@@ -622,6 +627,7 @@ m.ls.rma <- rma(yi,
 dat.ls$g <- 1
 dat.ls$id <- as.factor(1:nrow(dat.ls))
 V <- diag(dat.ls$vi, nrow = nrow(dat.ls)) # variance covariance matrix for sampling errors
+dimnames(V) <- list(levels(dat.ls$id), levels(dat.ls$id))
 
 # fit with glmmTMB
 m.ls.tmb  <- glmmTMB(yi ~ rand + equalto(0 + id|g,V), ##the map variable "id" must be a factor 
@@ -692,6 +698,8 @@ $\sigma^2_n$ is the variance of the species level random effect, $\sigma^2_p$ is
 ```{r}
 # Load some phylo dataset and matrix
 load(here("data", "phylo_simulated_data.RData"))
+dimnames(V) <- list(levels(dat$id), levels(dat$id))
+dimnames(P) <- list(levels(dat$species), levels(dat$species))
 ```
 
 

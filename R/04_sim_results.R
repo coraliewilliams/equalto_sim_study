@@ -15,10 +15,10 @@ col.m <- c(
 col.m.pastel <- alpha(col.m, 0.4)
 
 # load simulation result files (one for each effect size measure)
-res_smd <- read_csv("results/res_smd.csv")
-res_lnrr <- read_csv("results/res_lnrr.csv")
-res_OR <- read_csv("results/res_OR.csv")
-res_IRR <- read_csv("results/res_IRR.csv")
+res_smd <- read_csv("results/res_smd.csv", guess_max = Inf)
+res_lnrr <- read_csv("results/res_lnrr.csv", guess_max = Inf)
+res_OR <- read_csv("results/res_OR.csv", guess_max = Inf)
+res_IRR <- read_csv("results/res_IRR.csv", guess_max = Inf)
 
 
 ################# 1. Convergence #########################
@@ -39,6 +39,17 @@ res_IRR <- read_csv("results/res_IRR.csv")
 # table(res_IRR$warn)
 # res_OR[is.na(res_OR$logLik),]
 # res_OR[is.na(res_IRR$logLik),]
+
+
+table(res_smd$model, is.na(res_smd$warn))/6000*100
+table(res_lnrr$model, is.na(res_lnrr$warn))/6000*100
+table(res_OR$model, is.na(res_OR$warn))/12000*100
+table(res_IRR$model, is.na(res_IRR$warn))/12000*100
+
+table(res_smd$model, is.na(res_smd$error))/6000*100
+table(res_lnrr$model, is.na(res_lnrr$error))/6000*100
+table(res_OR$model, is.na(res_OR$error))/12000*100
+table(res_IRR$model, is.na(res_IRR$error))/12000*100
 
 
 res_smd$conv <- is.na(res_smd$warn)&is.na(res_smd$error)

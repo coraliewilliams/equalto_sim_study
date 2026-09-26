@@ -1,13 +1,15 @@
 ---
 title: "Fitting meta-analysis with the `glmmTMB` R package"
-subtitle: "Supplementary material for Research Synthesis Methods"
 author:
   - name: "Coralie Williams"
     orcid: "0000-0003-1312-4953"      
 date: last-modified
 format:
   html:
-    theme: flatly   
+    theme: flatly
+    mainfont: "Atkinson Hyperlegible"
+    monofont: "Fira Code"
+    fontsize: 1.05em
     toc: true
     toc-location: left
     toc-depth: 3
@@ -29,12 +31,14 @@ format:
     link-external-newwindow: true
     embed-resources: true
     grid:
-      body-width: 900px               
+      body-width: 900px
+bibliography: references.bib
+link-citations: true
 ---
 
 This webpage is supporting material to the paper "*Meta-analysis with the `glmmTMB` R package*" (DOI: XXX).
 
-Below, we show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package (Brooks et al., 2017), which enables to specify the known sampling error variance-covariance (VCV) matrix.
+Below, we show how to fit a meta-analysis using the `equalto` covariance structure in `glmmTMB` R package [@brooks2017glmmtmb], which allows users to specify the known sampling error variance-covariance (VCV) matrix.
 
 ### Contact {#contact}
 
@@ -45,7 +49,7 @@ Last updated: `r format(Sys.Date(), "%d %B %Y")`
 
 # Introduction 
 
-To demonstrate how to fit a meta-analysis using the `glmmTMB` R package (Brooks et al., 2017), we will fit a multilevel meta-analytic model assuming multiple effect sizes per study. This model synthesises effect sizes across studies by accounting for variation at both the study and observation (effect size) levels, while also modelling correlated sampling errors within studies.
+To demonstrate how to fit a meta-analysis using the `glmmTMB` R package [@brooks2017glmmtmb], we will fit a multilevel meta-analytic model assuming multiple effect sizes per study. This model synthesises effect sizes across studies by accounting for variation at both the study and observation (effect size) levels, while also modelling correlated sampling errors within studies.
 
 Given $j$ effect sizes within $i$ studies, we specify the model as:
 
@@ -59,7 +63,7 @@ $\text{VCV}$ represents a block-diagonal variance-covariance matrix including kn
 
 ### Load libraries
 
-```{r}
+```{r load-libraries}
 #| output: false
 #| warnings: false
 
@@ -71,9 +75,9 @@ $\text{VCV}$ represents a block-diagonal variance-covariance matrix including kn
   library(tidyverse)
 ```
 
-Check if the `equalto` covariance structure is available (it should be in position 15 of this output) :
+Check if the `equalto` covariance structure is available (it should be in position 15 of this output):
 
-```{r}
+```{r check-covstruct}
 glmmTMB:::.valid_covstruct
 ```
 
@@ -82,7 +86,7 @@ glmmTMB:::.valid_covstruct
 
 Now, let's simulate some data following the structure of the above multilevel meta-analysis.
 
-```{r}
+```{r simulate-data}
 #| output: false
 #| warnings: false
 
@@ -122,6 +126,7 @@ u <- rnorm(k.studies, 0, sqrt(sigma2.u))[study]
 m <- rnorm(k, 0, sqrt(sigma2.m))
 
 # simulate multivariate normal sampling errors with specific VCV
+# (re-seeded so this draw doesn't depend on the number of random draws above)
 set.seed(123)
 e <- mvrnorm(n = 1, mu = rep(0, length(vi)), Sigma = V) 
 #e <- rnorm(k, 0, sqrt(vi))[study] #without within-study correlation (diag VCV)
@@ -147,9 +152,17 @@ Before we fit the model we need to obtain the within-study error variance-covari
 
 We use the metafor `vcalc` function to obtain a block diagonal VCV matrix for the sampling errors:
 
-```{r}
+```{r vcv-multilevel}
 VCV <- metafor::vcalc(vi, cluster=study, obs=obs, data=dat, rho=0.5)
+
+# make sure the VCV row/column names match the levels (and order) of the
+# `obs` random effect variable used in the equalto() term below
+dimnames(VCV) <- list(levels(dat$obs), levels(dat$obs))
 ```
+
+::: callout-important
+**Row and column names of the VCV matrix must match the levels of the `equalto` random effect variable, and be in the same order.** `glmmTMB` matches rows/columns of the VCV matrix to random effect levels. Always set `dimnames(VCV) <- list(levels(your_factor), levels(your_factor))` (or `rownames()`/`colnames()`) right after constructing the matrix, as shown above.
+:::
 
 Now we fit the `glmmTMB` model with `equalto` covariance structure.
 
@@ -162,11 +175,11 @@ We specify:
 -   the within-study random effect $m_{ij}$ that captures the variability at the observation level is modelled as the *residual error* in this model.
 
 ::: callout-note
-**Important note:** the `equalto` multivariate random effect variable (here it is called `obs`) must be a factor and the corresponding VCV matrix must have rows and columns matching the levels of the `obs` variable.
+The `equalto` multivariate random effect variable (here it is called `obs`) must be a factor.
 :::
 
 
-```{r}
+```{r fit-glmmtmb-multilevel}
 
 # Fit glmmTMB model with equalto ----------------------------------
 fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
@@ -212,12 +225,12 @@ fit.equalto <- glmmTMB(y ~ 1 + (1|study) + equalto(0 + obs|g,VCV),
 
 Let's compare with the `metafor` package `rma.mv` function that fits a multilevel model with random effects. Here the model is specified with two random effects: `(1|study)` corresponding to the among-study ($u_i$) and `(1|id)` corresponding to the within-study ($m_{ij}$) random effects. The sampling errors $e_{ij}$ VCV matrix is specified using the `V` argument.
 
-```{r}
+```{r fit-metafor-multilevel}
 # Fit metafor model --------------------------------------------
 fit.metafor <- rma.mv(yi = y, 
                       V = VCV,
                       random = list(~1 | study, ~1 | id),
-                      control=list(REMLf=FALSE), #set this to obtain the exact same likelihood as glmmTMB 
+                      control=list(REMLf=FALSE),
                       data = dat) #uses REML by default
 
 # > summary(fit.metafor)
@@ -245,9 +258,13 @@ fit.metafor <- rma.mv(yi = y,
 # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 ```
 
+::: callout-tip
+`control=list(REMLf=FALSE)` is needed to obtain the exact same REML likelihood value from `rma.mv()` as `glmmTMB()` reports; the two packages otherwise use slightly different REML likelihood calculations.
+:::
+
 Then, we extract the model results for each model and compare outputs:
 
-```{r}
+```{r compare-multilevel-output}
 ### Compare output 
 equalto <- data.frame(model = "glmmTMB",
                       est = coef(summary(fit.equalto))$cond[,"Estimate"],
@@ -272,7 +289,7 @@ kable(output)
 
 ```
 
-The overall mean estimate and random effect variance estimates are identical across the two packages ✅
+The overall mean estimate and random effect variance estimates are identical across the two packages.
 
 
 ### Derive adjusted $t$-distribution p-values
@@ -281,7 +298,7 @@ When the number of studies is small (<10) it is preferable to use the $t$-distri
 
 In `metafor` you can do this directly in the `rma.mv` function when fitting a multilevel/multivariate model with the arguments `test="t"` and `dfs="contain"` (actually if `dfs="contain"` is set this automatically sets `test="t"`).
 
-```{r}
+```{r fit-metafor-ttest}
 # Fit metafor model --------------------------------------------
 fit.metafor.t <- rma.mv(yi = y, 
                       V = VCV,
@@ -295,15 +312,15 @@ summary(fit.metafor.t)
 
 With `glmmTMB` you can derive the $t$-test statistic, adjusted degrees of freedom and corresponding P value the following way:
 
-```{r}
+```{r fit-glmmtmb-ttest}
 # summary stats of fixed effects
 fef <- as.data.frame(summary(fit.equalto)$coefficients$cond)
 b0.est <- fef$Estimate
 b0.se <- fef$`Std. Error`
 
-# if the coefficient of interest varies at the level of corresponding to a random effect (i.e. here it is `study`) then the degree of freedom if the number of unique levels minus the number of estimated coefficients in the model
+# if the coefficient of interest varies at the level corresponding to a random effect (i.e. here it is `study`) then the degrees of freedom are the number of unique levels minus the number of estimated coefficients in the model
 df.contain <- length(unique(dat$study)) - nrow(fef)
-# otherwise it is the total nuber of estimates in the analysis minus the total number of model coefficients
+# otherwise it is the total number of estimates in the analysis minus the total number of model coefficients
 #df.adj <- nrow(dat) - nrow(fef)
 
 # get t-test statistic and p-value
@@ -340,17 +357,17 @@ For each case study, we demonstrate model specification, output, and interpretat
 
 ## Bivariate meta-analysis
 
-Meta-analysis is widely used in medicine to combine evidence across clinical trials and observational studies. As many outcomes are events in medicine, common effect sizes measures used are odds ratios, risk ratios, risk differences, and their log transforms.
+Meta-analysis is widely used in medicine to combine evidence across clinical trials and observational studies. As many outcomes in medicine are events, common effect size measures are odds ratios, risk ratios, risk differences, and their log transforms.
 
-We will use the Colditz et al. (1994) dataset that is directly avaiable in `metafor` via the `metadat` R package. This published meta-analysis assessed the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine against tuberculosis across 13 studies. We will fit a bivariate meta-analysis that treats the two vaccination groups as separate outcomes, and estimates, for each group, the overall mean effect and among-study variance, as well as the correlation of study-level effects between groups (i.e., how strongly they co-vary).
+We will use the Colditz et al. [-@colditz1994bcg] dataset that is directly avaiable in `metafor` via the `metadat` R package [@white2022metadat]. This published meta-analysis assessed the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine against tuberculosis across 13 studies. We will fit a bivariate meta-analysis that treats the two vaccination groups as separate outcomes, and estimates, for each group, the overall mean effect and among-study variance, as well as the correlation of study-level effects between groups (i.e., how strongly they co-vary).
 
-```{r data_colditz}
+```{r data-colditz}
 dat <- dat.colditz1994
 ```
 
-Reshape to long format so that each arm has its own row (“v” = vaccinated, “c” = unvaccinated/control), and setting control as the reference group.
+Reshape to long format so that each arm has its own row (“v” = vaccinated, “c” = unvaccinated/control), and set control as the reference group.
 
-```{r data_long_colditz}
+```{r data-long-colditz}
 dat_long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat)
 levels(dat_long$group) <- c("c", "v")
 dat_long$group <- relevel(dat_long$group, ref="c")
@@ -358,7 +375,7 @@ dat_long$group <- relevel(dat_long$group, ref="c")
 
 We compute the logit-transformed event proportion (`PLO`) as the effect-size measure. And we also need to create a constant grouping dummy variable `g` for `glmmTMB` model specification (this needs to be a constant value for all rows). 
 
-```{r}
+```{r escalc-colditz}
 dat_long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat_long)
 dat_long$obs <- as.factor(1:nrow(dat_long))
 dat_long$g <- 1 #dummy variable
@@ -366,21 +383,35 @@ head(dat_long)
 
 ```
 
-Derive the variance-covariance matrix (VCV) with in diagonal the sampling error variances and zero on the off-diagonals (assume studies are independent):
+Derive the variance-covariance matrix (VCV), with the sampling error variances on the diagonal and zero on the off-diagonals (assume studies are independent):
 
-```{r}
+```{r vcv-colditz}
 VCV <- diag(dat_long$vi)
+
+# make sure the VCV row/column names match the levels of the `obs` random
+# effect variable used in the equalto() term below
+dimnames(VCV) <- list(levels(dat_long$obs), levels(dat_long$obs))
 VCV[1:5,1:5] #show first five measures of VCV matrix
 ```
 
-To fit a bivariate meta-analysis with `glmmTMB` using `equalto` supply the sampling-error variance–covariance matrix (here it is called `VCV`), and fix the dispersion at zero (`dispformula = ~ 0`) since we don't want to model any within-study variance effect. 
+::: callout-important
+As before, the row and column names of `VCV` must match the levels of the `obs` random effect variable, and be in the same order.
+:::
 
-```{r biv_glmmTMB}
+To fit a bivariate meta-analysis with `glmmTMB` using `equalto` supply the sampling-error variance–covariance matrix (here it is called `VCV`).
+
+```{r biv-glmmtmb}
 bv_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
                        dispformula = ~ 0,
                        REML = TRUE,
                        data=dat_long)
+```
 
+::: callout-tip
+`dispformula = ~ 0` fixes the residual (dispersion) variance at zero, since here the only within-study variability we want to model comes from the `equalto()` sampling-error VCV, not from an additional residual term.
+:::
+
+```{r biv-glmmtmb-output}
 # > summary(bv_fit)
 #  Family: gaussian  ( identity )
 # Formula:          yi ~ group + (0 + group | study) + equalto(0 + obs | g, VCV)
@@ -427,7 +458,7 @@ bv_fit <- glmmTMB(yi ~ group + (0 + group|study) + equalto(0 + obs|g,VCV),
 
 To obtain the variance component estimates and corresponding correlation $\rho$ (i.e. `rho`) for each group we use the `VarCorr` function:
 
-```{r}
+```{r biv-varcorr}
 vc <- VarCorr(bv_fit)
 var_con <- vc$cond$study["groupc", "groupc"]
 var_exp <- vc$cond$study["groupv", "groupv"]
@@ -436,7 +467,7 @@ rho.tmb <- vc$cond$study["groupc", "groupv"] / sqrt(var_con * var_exp)
 
 Then we can extract the model results as follows: 
 
-```{r}
+```{r biv-extract-results}
 bv_out <- data.frame(est.b0 = as.numeric(coef(summary(bv_fit))$cond[,"Estimate"][1]), 
                      se.b0 = as.numeric(coef(summary(bv_fit))$cond[,"Std. Error"][1]), 
                      est.b1 = as.numeric(coef(summary(bv_fit))$cond[,"Estimate"][2]), 
@@ -451,7 +482,7 @@ bv_out
 
 This is equivalent to the following model in `metafor`:
 
-```{r biv_rma.mv}
+```{r biv-rma-mv}
 bv_fit_rma <- rma.mv(yi, vi, mods = ~ group, 
                      random = ~ group | study, 
                      struct = "UN",
@@ -497,7 +528,7 @@ bv_fit_rma <- rma.mv(yi, vi, mods = ~ group,
 
 We can extract the model results as follows:
 
-```{r}
+```{r biv-rma-extract-results}
 bv_out_rma <- with(bv_fit_rma, data.frame(est.b0 = as.numeric(b[1]),
                                       se.b0 = se[1],
                                       est.b1 = as.numeric(b[2]),
@@ -509,10 +540,10 @@ bv_out_rma
 ```
 
 
-We can also fit the GLMM specification of the same bivariate model by taking the joint distribution of the probability of an event in the treatment and control groups of each study. This model is sometimes called the “Van Houwelingen bivariate” model
+We can also fit the GLMM specification of the same bivariate model by taking the joint distribution of the probability of an event in the treatment and control groups of each study. This model is sometimes called the "Van Houwelingen bivariate" model.
 
 
-```{r}
+```{r biv-joint-data-prep}
 dat_long <- dat_long |>
   mutate(vacc = as.integer(group == "v"),
     cont = as.integer(group == "c"))
@@ -521,7 +552,7 @@ dat_long <- dat_long |>
 
 Now fit the model with glmmTMB function:
 
-```{r}
+```{r biv-joint-fit}
 bv_joint_fit <- glmmTMB(cbind(out1,out2) ~ factor(vacc) + (cont+vacc-1|study), 
                         family = binomial(link = "logit"), 
                         data=dat_long)
@@ -576,7 +607,7 @@ bv_joint_out
 
 When several treatments are compared across a set of studies, a network meta-analysis can be used. It allows treatments to be compared even when they were not directly compared in the same study, provided they are connected through other treatment comparisons. This allows all treatments in the network to be compared within one model.
 
-We use the Hasselblad (1998) dataset from the `metadat` R package. It contains 24 studies comparing four smoking-cessation conditions: no contact, self-help, individual counselling and group counselling. For each study arm, the dataset records the number of individuals who remained abstinent for 6 to 12 months and the total number of individuals. Most studies compared two conditions, while two studies compared three.
+We use the Hasselblad [-@hasselblad1998multitreatment] dataset from the `metadat` R package [@white2022metadat]. It contains 24 studies comparing four smoking-cessation conditions: no contact, self-help, individual counselling and group counselling. For each study arm, the dataset records the number of individuals who remained abstinent for 6 to 12 months and the total number of individuals. Most studies compared two conditions, while two studies compared three.
 
 
 ```{r}
@@ -588,6 +619,8 @@ head(dat)
 Before fitting the model, we visualise the network of direct treatment comparisons. Each node represents a treatment, and each edge represents a direct comparison between two treatments. Wider edges indicate that more studies contributed to that comparison.
 
 ```{r}
+# loaded here (rather than in the top-level library block) since igraph
+# masks several dplyr/purrr functions used elsewhere in this document
 library(igraph, warn.conflicts=FALSE)
 pairs <- data.frame(do.call(rbind, sapply(split(dat$trt, dat$study), function(x) t(combn(x,2)))),
                     stringsAsFactors=FALSE)
@@ -627,7 +660,7 @@ levels(dat$trt) <- paste0(" ", levels(dat$trt))
 
 We fit a one-stage arm-based network meta-analysis using a binomial GLMM with a logit link. The model uses the numbers of abstinent (`xi`) and non-abstinent individuals (`ni - xi`) in each study arm. The treatment effects compare each counselling condition with no contact, while the study-level random effects account for variation between studies.
 
-This is an arm-based (AB) likelihood: the raw arm-level counts are modelled directly via an exact binomial distribution, rather than first reducing each study to estimated log-odds ratios pooled under a normal approximation as in the traditional contrast-based (CB) likelihood (Salanti, 2012; White et al., 2019).
+This is an arm-based (AB) likelihood: the raw arm-level counts are modelled directly via an exact binomial distribution, rather than first reducing each study to estimated log-odds ratios pooled under a normal approximation as in the traditional contrast-based (CB) likelihood [@salanti2012indirect; @white2019comparison].
 
 
 **Model 1: independent arm-level random effects**
@@ -744,7 +777,7 @@ Exponentiating the profile likelihood intervals gives odds ratios versus no cont
 
 In meta-analysis of ecological and evolutionary studies, effect sizes are often drawn from multiple species. Because species share evolutionary history, these effect size estimates are not independent. To account for this phylogenetic relatedness, we can include a species-level random effect structured by a phylogenetic correlation (which is derived from a phylogenetic tree and assumed model of evolution). We can fit such a random effect in `glmmTMB` with the `propto` covariance structure. 
 
-We will use a published meta-analysis dataset of plant diversity effects on leaf traits (Felix et al., 2023) to showcase how to use `glmmTMB` to fit a phylogenetic meta-analysis.
+We will use a published meta-analysis dataset of plant diversity effects on leaf traits [@felix2023leaf] to showcase how to use `glmmTMB` to fit a phylogenetic meta-analysis.
 
 ```{r}
 #| results: "hide"    
@@ -752,7 +785,10 @@ We will use a published meta-analysis dataset of plant diversity effects on leaf
 #| warning: false     
 
 library(readr)
-ef <- read_csv("felix_data/effect_sizes.csv")
+# Source file is Latin-1 (ISO-8859-1) encoded, not UTF-8; reading it as
+# UTF-8 would leave invalid bytes in character columns (e.g. `experiment`),
+# which would later break base::trimws()/sub() inside orchaRd::mod_results().
+ef <- read_csv("felix_data/effect_sizes.csv", locale = locale(encoding = "ISO-8859-1"))
 options(na.action = "na.pass")
 ```
 
@@ -763,15 +799,16 @@ Data set-up:
 #| message: false  
 #| warning: false
 
-# load libraries
+# loaded here (rather than in the top-level library block) to avoid
+# namespace clashes between rotl/ape/dplyr and packages loaded earlier
 suppressPackageStartupMessages({
   library(rotl)
   library(ape)
   library(dplyr)
 })
 
-#remove empty rows in Nfixing
-ef <- ef[which(ef$Nfixing!=is.na(ef$Nfixing)),] 
+# remove rows with missing Nfixing
+ef <- ef[!is.na(ef$Nfixing), ]
 
 # construct phylogentic tree matrix for use as random factor
 species <- unique(ef$species) # list of unique species in meta-analysis
@@ -791,6 +828,9 @@ ef$phylo <- factor(ef$species, levels = rownames(phylo.cor))
 phylo.cor <- phylo.cor[rownames(phylo.cor) %in% levels(ef$phylo),
                        colnames(phylo.cor) %in% levels(ef$phylo)]
 
+phylo.cor <- phylo.cor[levels(ef$phylo), levels(ef$phylo)]
+dimnames(phylo.cor) <- list(levels(ef$phylo), levels(ef$phylo))
+
 # add g variable
 ef$g <- 1
 
@@ -800,11 +840,13 @@ ef$id <- as.factor(1:nrow(ef))
 # set up sampling errors variance-covariance matrix 
 # assuming within-study a constant correlation of 0.5
 V <- metafor::vcalc(vi, cluster=ACC, obs=id, data=ef, rho=0.5)
-
-# make sure row matrix and id levels match
 rownames(V) <- colnames(V) <- levels(ef$id)
 
 ```
+
+::: callout-important
+Both `phylo.cor` (used with `propto()`) and `V` (used with `equalto()`) must have row and column names matching the levels of their corresponding random effect variables (`phylo` and `id`), in the same order.
+:::
 
 Let's view the five rows of the species correlation matrix `phylo.cor`  and the sampling error variance-covariance matrix `V` (which assumes no within-study or among effect size correlations):
 
@@ -813,7 +855,7 @@ phylo.cor[1:5,1:5]
 V[1:5,1:5]
 ```
 
-We fit a multilevel model using experimental site (\texttt{experiment}), study ID (\texttt{ACC}), individual effect ID (\texttt{id}) and plant species (\texttt{species}) were included as random factors to account for non-independence among effect sizes. 
+We fit a multilevel model in which experimental site (`experiment`), study ID (`ACC`), individual effect ID (`id`), and plant species (`species`) are included as random factors to account for non-independence among effect sizes.
 
 This multilevel phylogenetic meta-analysis uses two covariance structures in `glmmTMB`:
 
@@ -970,7 +1012,7 @@ Some notes about speeding up model fitting with `metafor`: [https://www.metafor-
 
 In a standard random-effects meta-analysis, the between-study variance $\tau^2$ is assumed constant across studies. This is often unrealistic. **Location–scale models** relax this assumption by modelling both the *location* (the mean effect) and the *scale* (the amount of heterogeneity) as functions of study-level moderators. In practice, you can include different predictors in the mean and variance parts to test whether heterogeneity varies with study features (e.g., outcome type, design) or differs across subgroups. This yields a more flexible meta-analytic model that can explain, not just accommodate, between-study variability.
 
-We will use a social-science meta-analysis of 48 studies on school-based writing-to-learn interventions. Each study contrasts an intervention group (greater emphasis on writing tasks) with a control group. The effect size measures used in this dataset is the *standardised mean differences*, where positive values indicate better academic performance under the intervention.
+We will use a social-science meta-analysis of 48 studies on school-based writing-to-learn interventions [@bangertdrowns2004]. Each study contrasts an intervention group (greater emphasis on writing tasks) with a control group. The effect size measures used in this dataset is the *standardised mean differences*, where positive values indicate better academic performance under the intervention.
 
 ```{r}
 dat <- dat.bangertdrowns2004
@@ -985,7 +1027,11 @@ V <- diag(dat$vi)
 row.names(V) <- colnames(V) <- levels(dat$id)
 ```
 
-We fit a simple location-scale meta-analysis modelling the study sample size variable (`ni`) in the location and scale parts. We use `dispformula` in `glmmTMB` to specify the scale part of the model. 
+::: callout-important
+Row and column names of `V` must match the levels of the `id` random effect variable, and be in the same order.
+:::
+
+We fit a simple location-scale meta-analysis [@viechtbauer2022locationscale] modelling the study sample size variable (`ni`) in the location and scale parts. We use `dispformula` in `glmmTMB` to specify the scale part of the model. 
 
 ```{r}
 #| results: "hide"    
@@ -1054,15 +1100,19 @@ summary(fit_ls)$coefficients$disp
 ```
 
 
-We can fit the same model with `metafor` with the `rma` function and using the `scale` argument:
+We can fit the same model with `metafor` [@viechtbauer2010metafor] with the `rma` function and using the `scale` argument:
 
 ```{r}
 fit_ls_rma <- rma(yi, vi, 
                   mods = ~ ni,
                   scale = ~ ni,
-                  control=list(REMLf=FALSE), #this provides the same log-likelihood as glmmTMB
+                  control=list(REMLf=FALSE),
                   data = dat)
 ```
+
+::: callout-tip
+As before, `control=list(REMLf=FALSE)` makes the `metafor` log-likelihood directly comparable to `glmmTMB`'s.
+:::
 
 
 By default `metafor` uses the variance for the scale, whereas `glmmTMB` uses the standard deviation. Hence, to compare both outputs we need to times by x2 the estimates from the `glmmTMB` model (given the scale model uses a log link).
@@ -1098,7 +1148,7 @@ The `glmmTMB` package offers a variety of covariance structures that can be used
 
 ## Orchard plots with glmmTMB {.unnumbered}
 
-Orchard plots are extensions of forest plots that display model estimates, confidence and prediction intervals, and the distribution of individual effect sizes (Nakagawa, 2021). To demonstrate how to produce orchard plots with the `orchaRd` package, we use the phylogenetic meta-analysis example and plot the estimated effects for the two plant groups: N-fixing and non-N-fixing species.
+Orchard plots are extensions of forest plots that display model estimates, confidence and prediction intervals, and the distribution of individual effect sizes [@nakagawa2023orchard]. To demonstrate how to produce orchard plots with the `orchaRd` package, we use the phylogenetic meta-analysis example and plot the estimated effects for the two plant groups: N-fixing and non-N-fixing species.
 
 
 ```{r}
@@ -1133,32 +1183,10 @@ orchaRd::orchard_plot(
 ```
 
 
-
-
 # References
 
-Bangert-Drowns, R. L., Hurley, M. M., & Wilkinson, B. (2004). _The effects of school-based writing-to-learn interventions on academic achievement: A meta-analysis_. Review of Educational Research, 74, 29-58.
-
-Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M., & Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. R Journal, 9(2), 378–400. <https://doi.org/10.32614/RJ-2017-066>
-
-Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). _Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature_. Journal of the American Medical Association, 271(9), 698–702. <https://doi.org/10.1001/jama.1994.03510330076038>
-
-Felix, J. A., Stevenson, P. C., & Koricheva, J. (2023). _Plant neighbourhood diversity effects on leaf traits: A meta-analysis_. Functional Ecology, 37(12), 3150–3163. <https://doi.org/10.1111/1365-2435.14441>
-
-Hasselblad, V. (1998). _Meta-analysis of multitreatment studies_. Medical Decision Making, 18(1), 37–43. <https://doi.org/10.1177/0272989X9801800110>
-
-Viechtbauer, W. (2010). _Conducting meta-analyses in R with the metafor package_. Journal of Statistical Software, 36(3), 1–48. <https://doi.org/10.18637/jss.v036.i03>
-
-Viechtbauer, W. , and López-López, J.A. (2022). _Location-scale models for meta-analysis_. Research Synthesis Methods, 13(6), 697–715. <https://doi.org/10.1002/jrsm.1562>
-
-Salanti, G. (2012). _Indirect and mixed-treatment comparison, network, or multiple-treatments meta-analysis: Many names, many benefits, many concerns for the next generation evidence synthesis tool_. Research Synthesis Methods, 3(2), 80–97.
-
-Nakagawa, S., Lagisz, M., O’Dea, R. E., Pottier, P., Rutkowska, J., Senior, A. M., Yang, Y., & Noble, D. W. A. (2023). _orchaRd 2.0: An R package for visualising meta-analyses with orchard plots_. Methods in Ecology and Evolution, 14(8). <https://doi.org/10.1111/2041-210X.14152>
-
-
-White, I. R., Turner, R. M., Karahalios, A., & Salanti, G. (2019). _A comparison of arm-based and contrast-based models for network meta-analysis_. Statistics in Medicine, 38(27), 5197–5213.
-
-White T, Noble D, Senior A, Hamilton W, Viechtbauer W (2022). _metadat: Meta-Analysis Datasets_. R package version 1.2-0, <https://CRAN.R-project.org/package=metadat>.
+::: {#refs}
+:::
 
 # Session info
 
