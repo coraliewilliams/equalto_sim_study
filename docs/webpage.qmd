@@ -6,9 +6,7 @@ author:
 date: last-modified
 format:
   html:
-    theme: flatly
-    mainfont: "Atkinson Hyperlegible"
-    monofont: "Fira Code"
+    theme: lumen
     fontsize: 1.05em
     toc: true
     toc-location: left
@@ -42,7 +40,7 @@ Below, we show how to fit a meta-analysis using the `equalto` covariance structu
 
 ### Contact {#contact}
 
-For any questions or to raise an error, please contact Coralie Williams: [coralie.williams\@unsw.edu.au](mailto:coralie.williams@unsw.edu.au)
+For any questions or to raise an error, please contact: [Coralie Williams](mailto:coralie.williams@unsw.edu.au)
 
 Last updated: `r format(Sys.Date(), "%d %B %Y")`
 
